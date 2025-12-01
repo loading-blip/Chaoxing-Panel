@@ -4,6 +4,7 @@ import logging
 import sys
 from tqdm import tqdm
 from typing import List
+from tabulate import tabulate
 
 from activity import activity_constructer
 from get_activity import get_activity
@@ -33,7 +34,15 @@ for activity in activity_json['data']['records']:
     time.sleep(1)
 process_bar.close()
 
-opt_list = []
+opt_list = [[f"{c_mgr.light_blue}名称{c_mgr.default}",
+            f"{c_mgr.light_blue}人数{c_mgr.default}",
+            f"{c_mgr.light_blue}位置{c_mgr.default}",
+            f"{c_mgr.light_blue}报名开始时间{c_mgr.default}",
+            f"{c_mgr.light_blue}报名开始时间{c_mgr.default}",
+            f"{c_mgr.light_blue}活动开始时间{c_mgr.default}",
+            f"{c_mgr.light_blue}活动结束时间{c_mgr.default}"
+            ],
+            ]
 
 for activity in activity_list:
     #TODO:正在制作过滤已结束输出的选项
@@ -47,7 +56,20 @@ for activity in activity_list:
     elif status["reg"] == "busy":                           color = c_mgr.yellow 
     else:                                                   color = c_mgr.green 
     
-    # HACK:更换为可阅读的代码，其实以下那坨是用来调试的（
-    opt_list.append(f"{color}{activity.friendly_class_name:<10}{c_mgr.default}\t{c_mgr.light_blue}人数{c_mgr.default}:{activity.current_people}/{activity.maxium_people if activity.maxium_people else "∞"}\t{c_mgr.light_blue}位置{c_mgr.default}:{activity.friendly_address_name:<10}\t{c_mgr.light_blue}报名时间{c_mgr.default}:{time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.start_time))} - {time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.end_time))}\t{c_mgr.light_blue}上课时间{c_mgr.default}:{time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.class_start_time))} - {time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.class_end_time))}")
+    start_time = "无" if not activity.start_time else time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.start_time))
+    end_time = "无" if not activity.end_time else time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.end_time))
+    class_start_time = time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.class_start_time))
+    class_end_time = time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.class_end_time))
+    
+    opt_list.append([color+activity.friendly_class_name+c_mgr.default,
+                    f"{activity.current_people if activity.current_people else "∞"}/{activity.maxium_people if activity.maxium_people else "∞"}",
+                    activity.friendly_address_name,
+                    start_time,
+                    end_time,
+                    class_start_time,
+                    class_end_time
+                    ])
 
-print("\n".join(opt_list))
+table = tabulate(opt_list, headers="firstrow", tablefmt="grid")
+
+print(table)
