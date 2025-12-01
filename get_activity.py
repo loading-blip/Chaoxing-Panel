@@ -5,7 +5,7 @@ from typing import Dict,Tuple
 import re
 import json
 
-class get:
+class fetch:
     """
     get父类，封装了点对超星客制化的功能
     """
@@ -24,6 +24,7 @@ class get:
         self.response_text = ""
         self.cookies = self.split_cookies(open("headFolder/cookies.txt","r",encoding="utf8").read())
         self.c_mgr = colored_opt()
+        self.session = requests.session()
         if not args :
             self.headers,self.request_data = self.read_head_file(headers_path)
 
@@ -57,8 +58,6 @@ class get:
                 else:
                     headers[k_v[0]] = k_v[1]
         return (headers,request_data)
-
-    
 
     def split_cookies(self,cookies:str) -> dict:
         """
@@ -104,125 +103,142 @@ class get:
 
         return "\n".join(opt)
 
-class get_activity(get):
+class get_activity(fetch):
     """
     用于获取当前课程列表
     """
-    def __init__(self, *args):
-        
+    def __init__(self):
         super().__init__("headFolder/activity_headers.txt",'https://hd.chaoxing.com','/hd/api/activity/list/participate')
-
+        self.json = self.get_activity_json()
 
     def get_activity_json(self) -> str:
         """
         获取当前课程列表
         """
         request_url = self.source_url + self.backend_api
-        get_session = requests.session()
+        chaoxing_response = self.session.post(request_url,
+                                              headers=self.headers
+                                              ,data=self.request_data,
+                                              cookies=self.cookies)
         
-
-        chaoxing_response = get_session.post(request_url,headers=self.headers,data=self.request_data,cookies=self.cookies)
         self.connect_code = chaoxing_response.status_code
         self.response_text = chaoxing_response.text
-        get_session.close()
+        self.session.close()
         return self.response_text
 
-    
-class get_activity_information(get):
-    """
-    用于获取每个课程的简述内容
-    """
-    def __init__(self, pre_url:str,page_id:int,website_id:int,*args) -> None:
-        """
-        构造简述内容，注意：运行完此构造函数就已经获取到内容了
-        Args:
-            pre_url(str): 是课程列表json每个课程的中的"previewUrl"
-            page_id(int): 是课程列表json每个课程的中的"pageId"
-            website_id(int): 是课程列表json每个课程的中的"websiteId"
-        """
-        self.pre_url = pre_url
-        self.page_id = page_id
-        self.website_id = website_id
-        self.pre_request_headers = self.read_head_file("headFolder/domain_activity_information_headers.txt")[0]
-        
-        super().__init__("headFolder/activity_information_headers.txt","https://api.hd.chaoxing.com","/mh/v3/activity/info")
-        # 获取简述需要Origin与Referer，这两个关键信息在此重定向的结果中获取
-        self.sub_domain = self.get_domain()
-        self.request_data = json.loads(self.request_data)
-        self.request_data["pageId"] = page_id
-        self.request_data["websiteId"] = website_id
+class get_activity_HTML(fetch):
+    def __init__(self, sub_domain:str,page_id) -> None:
+        super().__init__("headFolder/activity_html_headers.txt",
+                         f"https://{sub_domain}.mh.chaoxing.com",
+                         f"/entry/page/{page_id}/show")
+        self.raw_html = self._get_html()
+    def _get_html(self):
+        url = self.source_url + self.backend_api
+        response = self.session.get(url,
+                        headers=self.headers,
+                        cookies=self.cookies,
+                        )
+        self.connect_code = response.status_code
+        self.response_text = response.text
+        self.session.close()
+        return response.text
+    def get(self,key):
+        find_key= re.search(key+r'\s*=\s*(\d+)',self.raw_html)
+        if find_key:
+            key = find_key.group(1)
+        else:
+            raise ValueError(f"Cannot find key:{key} in response.")
 
-        tmp = self.headers["Origin"][:8] + self.sub_domain + self.headers["Origin"][16:]
-        self.headers["Origin"] = tmp
-        self.headers["Referer"] = tmp + "/"
-        self.json = self.get_json()
+        return key
+
+class get_302_Location(fetch):
+    def __init__(self, class_id) -> None:
+        super().__init__("headFolder/domain_activity_information_headers.txt", "https://hd.chaoxing.com", f"/hd/activity/{class_id}")
+        self.domain = self.get_domain()
     def get_domain(self) -> str:
         """
         获取302重定向之后的url中的最后一级域名名称，通常为8位字母+数字组合
         Returns:
             str: 8位字母+数字组合
         """
-        session = requests.session()
-        domain = ""
-        request = session.get(self.pre_url,
-                    headers=self.pre_request_headers,
-                    cookies=self.cookies,
-                    allow_redirects=False,
-                    timeout=(3,5))
-        domain = request.headers.get('Location')
+        url = self.source_url + self.backend_api
+        response = self.session.get(url,
+                            headers=self.headers,
+                            cookies=self.cookies,
+                            allow_redirects=False,
+                            )
+        domain = response.headers.get('Location')
+        self.connect_code = response.status_code
+        self.response_text = response.text
+        self.session.close()
         if domain:
             return domain[8:16]
         else:
             raise BaseException("NetworkError","Cannot get subdomain")
-    def get_json(self) -> dict:
-        """
-        获取活动详细信息
-        Returns:
-            dict:返回序列化后的json字典
-            
-        """
+
+class get_activity_detial(fetch):
+    def __init__(self,page_id,website_id,sub_domain) -> None:
+        super().__init__("headFolder/activity_information_headers.txt", "https://api.hd.chaoxing.com", "/mh/v3/activity/info")
+        self.page_id = page_id
+        self.website_id = website_id
+        self.sub_domain = sub_domain
+        self.json = self._get_json()
+    def _get_json(self):
+        tmp = self.headers["Origin"][:8] + self.sub_domain + self.headers["Origin"][16:]
         url = self.source_url + self.backend_api
+        self.headers["Origin"] = tmp
+        self.headers["Referer"] = tmp + "/"
+        self.request_data = json.loads(self.request_data)
+        self.request_data["pageId"] = self.page_id
+        self.request_data["websiteId"] = self.website_id
         session = requests.session()
-        get_detial_json = session.post(url,
+        response = session.post(url,
                      headers=self.headers,
                      cookies=self.cookies,
                      json=self.request_data)
-        return get_detial_json.json()
+        self.connect_code = response.status_code
+        self.response_text = response.text
+        self.session.close()
+        return response.json()
 
-
-class get_activity_describe(get):
-    def __init__(self, sub_domain:str,page_id,website_id) -> None:
-        self.pre_url = f"https://{sub_domain}.mh.chaoxing.com/entry/page/{page_id}/show"
-
-        source_url = " https://hd.chaoxing.com"
-        backend_api = f"/api/activity/introduction?pageId={page_id}&current_pageId={page_id}&current_websiteId={website_id}&current_wfwfid=296090"
-        self.pre_request_headers = self.read_head_file("headFolder/activity_html_headers.txt")[0]
-        super().__init__("headFolder/describe_headers.txt", source_url, backend_api)
-        self.wfwfid = self.get_wfwfid()
-        self.describe = self.get_describe()
-
-    def get_wfwfid(self):
-        session = requests.get(self.pre_url,
-                               headers=self.pre_request_headers,
-                               cookies=self.cookies,
-                               )
-        find_wfwfid= re.search(r'websiteId\s*=\s*(\d+)',session.text)
-        if find_wfwfid:
-            wfwfid = find_wfwfid.group(1)
-        else:
-            raise ValueError("Cannot find wfwfid in response.")
-
-        return wfwfid
-    def get_describe(self) ->dict:
+class get_activity_describe(fetch):
+    def __init__(self, page_id,website_id,wfwfid) -> None:
+        super().__init__("headFolder/describe_headers.txt",
+                         "https://hd.chaoxing.com",
+                         f"/api/activity/introduction?pageId={page_id}&current_pageId={page_id}&current_websiteId={website_id}&current_wfwfid={wfwfid}")
+        self.describe = self._get_describe()
+    def _get_describe(self):
         url = self.source_url + self.backend_api
-        session = requests.session()
-        get_describe_json = session.post(url,
+        response = self.session.post(url,
                      headers=self.headers,
                      json=self.request_data)
-        return get_describe_json.json()
+        self.connect_code = response.status_code
+        self.response_text = response.text
+        self.session.close()
+        return response.json()["data"]
 
 
 if __name__ == "__main__":
-    test = get_activity_describe("5o9skajr",2305690,950312)
-    print(test.wfwfid)
-    print(test.describe)
+    test_target = 4
+    if test_target == 0:
+        test = get_activity()
+        print(test.get_info())
+        print(test.json)
+    elif test_target == 1:
+        test = get_activity_HTML("5o9skajr",2305690)
+        print(test.get_info())
+        print(test.raw_html)
+        print(test.get("pageId"))
+    elif test_target == 2:
+        test = get_302_Location(4110881)
+        print(test.get_info())
+        print(test.domain)
+    elif test_target == 3:
+        test = get_activity_detial(2305690,950312,"5o9skajr")
+        print(test.get_info())
+        print(test.json)
+    elif test_target == 4:
+        test = get_activity_describe(2305690,950312,296090)
+        print(test.get_info())
+        print(test.describe)
+

@@ -3,15 +3,13 @@ import time
 import datetime
 import json
 
-from get_activity import get_activity_information,get_activity_describe
+from get_activity import get_activity_describe,get_activity_detial,get_302_Location,get_activity_HTML
 from color import colored_opt
 
 class activity_constructer:
     """
     第二课堂活动类，将json数据处理，提供当前课程报名状态
     """
-    @overload
-    def __init__(self) -> None:...
 
     @overload
     def __init__(self,raw_json:Dict[str,Any]) -> None:...
@@ -20,29 +18,19 @@ class activity_constructer:
     def __init__(self,raw_json:Dict[str,Any],second_raw_json:Dict[str,Any]) -> None:...
 
 
-    def __init__(self,raw_json:Dict[str,Any]={},second_raw_json:Dict[str,Any]={}) -> None:
+    def __init__(self,raw_json:Dict[str,Any],second_raw_json:Dict[str,Any]={}) -> None:
         """
         不传入值则会创建一个Example，只传入raw_json会自动获取second_raw_json
         Args:
             raw_json(Dict[str,Any], optional): 爬取到的单个课程json
             second_raw_json(Dict[str,Any], optional): 爬取到的此课程描述
         """
-        if not raw_json and not second_raw_json:
-            raw_json = {}
-            second_raw_json = {}
-            # HACK: 下次代码重构解决
-            activity_information = get_activity_information(raw_json["previewUrl"],raw_json["pageId"],raw_json["websiteId"])
-            # TODO:构造一个example
-            pass
-        elif not second_raw_json:
-            activity_information = get_activity_information(raw_json["previewUrl"],raw_json["pageId"],raw_json["websiteId"])
-            second_raw_json = activity_information.json["data"]["results"]
+        self.sub_domain = get_302_Location(raw_json["id"]).domain
+        if not second_raw_json:
+            self.activity_detial = get_activity_detial(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
+            second_raw_json = self.activity_detial.json["data"]["results"]
         else:
-            # HACK: 下次代码重构解决
-            activity_information = get_activity_information(raw_json["previewUrl"],raw_json["pageId"],raw_json["websiteId"])
             second_raw_json = second_raw_json["data"]["results"]
-                
-
         
         self.name = raw_json["name"]
         self.start_time,self.end_time = self.format_date(self.get_time_in_json(second_raw_json))
@@ -57,8 +45,9 @@ class activity_constructer:
         self.belong_group = ["信息工程学院","8号楼","线上"]
         self.organisers = raw_json["organisers"]
 
-        self.activity_describe = get_activity_describe(activity_information.sub_domain,raw_json["pageId"],raw_json["websiteId"])
-        self.describe = self.activity_describe.describe["data"]
+        self.wfwfid = get_activity_HTML(self.sub_domain,raw_json["pageId"])
+        self.activity_describe = get_activity_describe(raw_json["pageId"],raw_json["websiteId"],self.wfwfid)
+        self.describe = self.activity_describe.describe
         self.friendly_class_name = self.name
         self.friendly_address_name = self.address
         if len(self.friendly_class_name) >= 10:
