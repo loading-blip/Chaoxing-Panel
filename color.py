@@ -1,5 +1,8 @@
 class colored_opt:
     def __init__(self):
+        """
+        颜色库
+        """
         self.default = "\033[0m"
         self.black = "\033[30m"
         self.red = "\033[31m"
