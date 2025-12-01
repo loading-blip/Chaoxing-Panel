@@ -24,3 +24,13 @@ class colored_opt:
                     self.white,
                     self.half_light
                 ]
+
+class Terminal_support:
+    def __init__(self) -> None:
+        self.link_sign = "\033]8;;"
+
+    def println_link(self,url:str,text:str,mode=False) -> str:
+        string = f'{self.link_sign}{url}\a{text}{self.link_sign}\a'
+        if mode:
+            print(string)
+        return string

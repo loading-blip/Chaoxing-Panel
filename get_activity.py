@@ -1,6 +1,6 @@
 import requests
 # from urllib.parse import unquote
-from color import colored_opt
+from u033_tools import colored_opt
 from typing import Dict,Tuple
 import re
 import json

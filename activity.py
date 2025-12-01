@@ -2,9 +2,10 @@ from typing import Dict,Any,Tuple,overload
 import time
 import datetime
 import json
+import os
 
 from get_activity import get_activity_describe,get_activity_detial,get_302_Location,get_activity_HTML
-from color import colored_opt
+from u033_tools import colored_opt
 
 class activity_constructer:
     """
@@ -37,6 +38,7 @@ class activity_constructer:
         self.class_start_time = raw_json["startTime"] / 1000
         self.class_end_time = raw_json["endTime"] / 1000
         self.name = raw_json["name"]
+        self.id = raw_json["id"]
         # self.status = {"未开始":0,"报名中":1,"即将开始":2,"进行中":3,"已结束":4}[raw_json["signUpStatusDescribe"]]
         self.address = raw_json["detailAddress"] or "线上"
         self.maxium_people = raw_json["personLimit"]
@@ -54,7 +56,7 @@ class activity_constructer:
             self.friendly_class_name = self.friendly_class_name[:9] + self.c_mgr.default + self.c_mgr.yellow + "..." + self.c_mgr.default
         if len(self.friendly_address_name) >= 10:
             self.friendly_class_name = self.friendly_class_name[:9] + self.c_mgr.default + self.c_mgr.yellow + "..." + self.c_mgr.default
-
+        self.generate_HTML(self.describe)
 
 
     def get_time_in_json(self,raw_json) -> str:
@@ -157,6 +159,17 @@ class activity_constructer:
         elif self.current_people / self.maxium_people <= 0.5:   status_dict["reg"] = "busy"
         else:                                                   status_dict["reg"] = "free"
         return status_dict
+    def generate_HTML(self,document:str,path="tmp/") -> None:
+        def sanitize_filename_translate(filename):
+            """使用str.translate移除不安全字符"""
+            # 定义需要过滤的字符
+            unsafe_chars = '<>:"/\\|?*'  # Windows/Linux常见非法字符
+            # 创建翻译表：将不安全字符映射为None（即删除）
+            translator = str.maketrans('', '', unsafe_chars)
+            return filename.translate(translator)
+        with open(os.path.join("tmp",sanitize_filename_translate(f"{self.id}.html")),"w",encoding="utf8") as html_file:
+            html_file.write(document)
+        
 
 
 if __name__ == "__main__":

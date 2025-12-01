@@ -2,15 +2,30 @@ import json
 import time
 import logging
 import sys
+import os
 from tqdm import tqdm
 from typing import List
 from tabulate import tabulate
+from html.parser import HTMLParser
 
 from activity import activity_constructer
 from get_activity import get_activity
-from color import colored_opt
+from u033_tools import colored_opt,Terminal_support
 
 c_mgr = colored_opt()
+
+class HTMLTextExtractor(HTMLParser):
+    """HTML标签移除器"""
+    def __init__(self):
+        super().__init__()
+        self.result = []
+    
+    def handle_data(self, data):
+        self.result.append(data)
+    
+    def get_text(self):
+        return ''.join(self.result)
+
 
 # requests动态获取第二课堂JSON
 def get_activity_list_json()-> dict: 
@@ -23,6 +38,11 @@ activity_json = get_activity_list_json()
 if activity_json['code']!= 1 : 
     logging.error("返回结果有误")
     sys.exit(1)
+
+if not os.path.exists("tmp"):
+    os.mkdir("tmp")
+
+current_path = os.getcwd()
 
 process_bar = tqdm(total=len(activity_json['data']['records']))
 activity_list:List[activity_constructer] = []
@@ -57,7 +77,10 @@ for activity in activity_list:
     elif status["reg"] == "busy":                           color = c_mgr.yellow 
     else:                                                   color = c_mgr.green 
     
-    describe = activity.describe if len(activity.describe) < 15 else activity.describe[:12]+"..."
+    html = HTMLTextExtractor()
+    html.feed(activity.describe)
+
+    describe = html.get_text() if len(html.get_text()) < 15 else html.get_text()[:12]+"..."
 
 
     start_time = "无" if not activity.start_time else time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.start_time))
@@ -72,7 +95,7 @@ for activity in activity_list:
                     end_time,
                     class_start_time,
                     class_end_time,
-                    describe
+                    Terminal_support().println_link("file://"+os.path.join(current_path,"tmp",f"{activity.id}.html").replace('\\', '/'),describe)
                     ])
 
 table = tabulate(opt_list, headers="firstrow", tablefmt="grid")
