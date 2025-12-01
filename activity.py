@@ -3,7 +3,7 @@ import time
 import datetime
 import json
 
-from get_activity import get_activity_information
+from get_activity import get_activity_information,get_activity_describe
 from color import colored_opt
 
 class activity_constructer:
@@ -30,12 +30,16 @@ class activity_constructer:
         if not raw_json and not second_raw_json:
             raw_json = {}
             second_raw_json = {}
+            # HACK: 下次代码重构解决
+            activity_information = get_activity_information(raw_json["previewUrl"],raw_json["pageId"],raw_json["websiteId"])
             # TODO:构造一个example
             pass
         elif not second_raw_json:
-            second_raw_json = get_activity_information(raw_json["previewUrl"],raw_json["pageId"],raw_json["websiteId"]).json["data"]["results"]
-
+            activity_information = get_activity_information(raw_json["previewUrl"],raw_json["pageId"],raw_json["websiteId"])
+            second_raw_json = activity_information.json["data"]["results"]
         else:
+            # HACK: 下次代码重构解决
+            activity_information = get_activity_information(raw_json["previewUrl"],raw_json["pageId"],raw_json["websiteId"])
             second_raw_json = second_raw_json["data"]["results"]
                 
 
@@ -53,6 +57,8 @@ class activity_constructer:
         self.belong_group = ["信息工程学院","8号楼","线上"]
         self.organisers = raw_json["organisers"]
 
+        self.activity_describe = get_activity_describe(activity_information.sub_domain,raw_json["pageId"],raw_json["websiteId"])
+        self.describe = self.activity_describe.describe["data"]
         self.friendly_class_name = self.name
         self.friendly_address_name = self.address
         if len(self.friendly_class_name) >= 10:

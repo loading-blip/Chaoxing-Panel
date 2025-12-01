@@ -40,7 +40,8 @@ opt_list = [[f"{c_mgr.light_blue}名称{c_mgr.default}",
             f"{c_mgr.light_blue}报名开始时间{c_mgr.default}",
             f"{c_mgr.light_blue}报名开始时间{c_mgr.default}",
             f"{c_mgr.light_blue}活动开始时间{c_mgr.default}",
-            f"{c_mgr.light_blue}活动结束时间{c_mgr.default}"
+            f"{c_mgr.light_blue}活动结束时间{c_mgr.default}",
+            f"{c_mgr.light_blue}描述{c_mgr.default}"
             ],
             ]
 
@@ -56,6 +57,9 @@ for activity in activity_list:
     elif status["reg"] == "busy":                           color = c_mgr.yellow 
     else:                                                   color = c_mgr.green 
     
+    describe = activity.describe if len(activity.describe) < 15 else activity.describe[:12]+"..."
+
+
     start_time = "无" if not activity.start_time else time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.start_time))
     end_time = "无" if not activity.end_time else time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.end_time))
     class_start_time = time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.class_start_time))
@@ -67,7 +71,8 @@ for activity in activity_list:
                     start_time,
                     end_time,
                     class_start_time,
-                    class_end_time
+                    class_end_time,
+                    describe
                     ])
 
 table = tabulate(opt_list, headers="firstrow", tablefmt="grid")
