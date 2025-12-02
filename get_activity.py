@@ -217,9 +217,30 @@ class get_activity_describe(fetch):
         self.session.close()
         return response.json()["data"]
 
+class get_css(fetch):
+    def __init__(self,sub_domain) -> None:
+        super().__init__("headFolder/css_file_headers.txt"," https://pc.chaoxing.com","/res/css/subscribe/pop.css?v=4")
+        self.sub_domain = sub_domain
+
+        self.css = self._get_css() 
+    def _get_css(self):
+        url = self.source_url + self.backend_api
+        tmp = self.headers["Referer"][:8] + self.sub_domain + self.headers["Referer"][16:]
+        self.headers["Referer"] = tmp
+        # self.headers["If-Modified-Since"] = ""
+        response = self.session.get(url,
+                        headers=self.headers,
+                        cookies=self.cookies,
+                        )
+        self.connect_code = response.status_code
+        self.response_text = response.text
+        self.session.close()
+        return response.text
+    
+
 
 if __name__ == "__main__":
-    test_target = 4
+    test_target = 5
     if test_target == 0:
         test = get_activity()
         print(test.get_info())
@@ -241,4 +262,7 @@ if __name__ == "__main__":
         test = get_activity_describe(2305690,950312,296090)
         print(test.get_info())
         print(test.describe)
+    elif test_target == 5:
+        test = get_css("5o9skajr")
+        print(test.get_info())
 

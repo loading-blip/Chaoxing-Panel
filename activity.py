@@ -160,6 +160,18 @@ class activity_constructer:
         else:                                                   status_dict["reg"] = "free"
         return status_dict
     def generate_HTML(self,document:str,path="tmp/") -> None:
+        raw_head = """<!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Document</title>
+                        <link rel="stylesheet" href="../css.css">
+                    </head>
+                    <body>
+                    """
+        raw_tail = """</body>
+                    </html>"""
         def sanitize_filename_translate(filename):
             """使用str.translate移除不安全字符"""
             # 定义需要过滤的字符
@@ -168,7 +180,9 @@ class activity_constructer:
             translator = str.maketrans('', '', unsafe_chars)
             return filename.translate(translator)
         with open(os.path.join("tmp",sanitize_filename_translate(f"{self.id}.html")),"w",encoding="utf8") as html_file:
+            html_file.write(raw_head)
             html_file.write(document)
+            html_file.write(raw_tail)
         
 
 
