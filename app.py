@@ -15,6 +15,7 @@ from get_activity import get_activity
 from u033_tools import colored_opt,Terminal_support
 
 class backend_web:
+    """后端服务器类"""
     def __init__(self) -> None:
         self.app = Flask(__name__)
         self._register_routes()
@@ -34,7 +35,7 @@ class backend_web:
 
         @self.app.route('/')
         def home():
-            return "hello"
+            return "Hello?"
 
 
         @self.app.route('/status')
@@ -75,6 +76,7 @@ class HTMLTextExtractor(HTMLParser):
         return ''.join(self.result)
 
 class chaoxing_activity:
+    """第二课堂数据获取类"""
     def __init__(self):
         self.raw_data =[]
         self.data:List[Dict[str,str]] = []
@@ -117,7 +119,7 @@ class chaoxing_activity:
         return activity_list
     def format_data(self,raw_data:List[activity_constructer]) -> List[Dict[str,str]]:
         activities = []
-    
+        # HACK: 代码重复，下次重构解决
         for activity in raw_data:
             shared_data.set_current_work(f'正在处理"{activity.name}"的详细信息...')
             
@@ -142,6 +144,7 @@ class chaoxing_activity:
             activities.append(activity_dict)
         return activities
     def __str__(self):
+        # HACK: 代码重复，下次重构解决
         current_path = os.getcwd()
         c_mgr = colored_opt()
 
@@ -194,6 +197,7 @@ class chaoxing_activity:
         return table
 
 class sharedData:
+    """线程数据共享类"""
     def __init__(self) -> None:
         self.status = "not_yet"
         self.current_work = "initialization..."
