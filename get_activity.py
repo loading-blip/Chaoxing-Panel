@@ -127,7 +127,16 @@ class get_activity(fetch):
         return self.response_text
 
 class get_activity_HTML(fetch):
+    """
+    用于获取当前课程HTML结构，但主要功能为获取wfwf_Id
+    """
     def __init__(self, sub_domain:str,page_id) -> None:
+        """
+        获取wfwf_Id
+        Args:
+            sub_domain: 302重定向返回时的Location最后一级域名
+            page_id: 课程中的pageId
+        """
         super().__init__("headFolder/activity_html_headers.txt",
                          f"https://{sub_domain}.mh.chaoxing.com",
                          f"/entry/page/{page_id}/show")
@@ -152,10 +161,16 @@ class get_activity_HTML(fetch):
         return key
 
 class get_302_Location(fetch):
+    """用于获取302重定向后指向的Location"""
     def __init__(self, class_id) -> None:
+        """
+        获取302重定向后指向的最后一级域名(报文头Location)
+        Args:
+            class_id: 每个课程的Id
+        """
         super().__init__("headFolder/domain_activity_information_headers.txt", "https://hd.chaoxing.com", f"/hd/activity/{class_id}")
-        self.domain = self.get_domain()
-    def get_domain(self) -> str:
+        self.domain = self._get_domain()
+    def _get_domain(self) -> str:
         """
         获取302重定向之后的url中的最后一级域名名称，通常为8位字母+数字组合
         Returns:
@@ -177,7 +192,15 @@ class get_302_Location(fetch):
             raise BaseException("NetworkError","Cannot get subdomain")
 
 class get_activity_detial(fetch):
+    """用于获取课程详细信息"""
     def __init__(self,page_id,website_id,sub_domain) -> None:
+        """
+        获取课程报名开始与结束时间等详细信息
+        Args:
+            page_id: 课程列表中的pageId
+            website_id: 课程列表中的websiteId
+            sub_domain: 302重定向时的最后一级域名
+        """
         super().__init__("headFolder/activity_information_headers.txt", "https://api.hd.chaoxing.com", "/mh/v3/activity/info")
         self.page_id = page_id
         self.website_id = website_id
@@ -202,7 +225,15 @@ class get_activity_detial(fetch):
         return response.json()
 
 class get_activity_describe(fetch):
+    """用于获取课程描述信息"""
     def __init__(self, page_id,website_id,wfwfid) -> None:
+        """
+        获取描述信息
+        Args:
+            page_id: 课程列表中的pageId
+            website_id: 课程列表中的websiteId
+            wfwfid: HTML结构中的p_wfwfid变量值
+        """
         super().__init__("headFolder/describe_headers.txt",
                          "https://hd.chaoxing.com",
                          f"/api/activity/introduction?pageId={page_id}&current_pageId={page_id}&current_websiteId={website_id}&current_wfwfid={wfwfid}")
@@ -218,7 +249,13 @@ class get_activity_describe(fetch):
         return response.json()["data"]
 
 class get_css(fetch):
+    """用于获取描述那栏用的的css，非必要不获取\n已经缓存到根目录中了"""
     def __init__(self,sub_domain) -> None:
+        """
+        获取描述那栏用的的css
+        Args:
+            sub_domain: 302重定向时的最后一级域名
+        """
         super().__init__("headFolder/css_file_headers.txt"," https://pc.chaoxing.com","/res/css/subscribe/pop.css?v=4")
         self.sub_domain = sub_domain
 
@@ -240,6 +277,7 @@ class get_css(fetch):
 
 
 if __name__ == "__main__":
+    # For test. qwq
     test_target = 5
     if test_target == 0:
         test = get_activity()
