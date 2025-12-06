@@ -4,16 +4,19 @@ from u033_tools import colored_opt
 from typing import Dict,Tuple
 import re
 import json
+from request_info import *
+from cipher import AESCipher
+from config import Config
 
 class fetch:
     """
     get父类，封装了点对超星客制化的功能
     """
-    def __init__(self,headers_path,source_url,backend_api,*args) -> None:
+    def __init__(self,headers_id:int,source_url:str,backend_api:str,datas_id=0,sub_domain="") -> None:
         """
         父类请求函数
         Args:
-            headers_path(str): 头部请求记录文件，当前版本data数据也写进header记录中了
+            headers_id(str): 头部请求记录文件，当前版本data数据也写进header记录中了
             source_url(str): 请求域名url，如：`https://example.com`
             backend_api(str): 请求接口路径，如：`/api/xxx`
         
@@ -22,42 +25,28 @@ class fetch:
         self.backend_api = backend_api
         self.connect_code = -1
         self.response_text = ""
-        self.cookies = self.split_cookies(open("headFolder/cookies.txt","r",encoding="utf8").read())
+        self._config = Config()
+        self.cookies = dict(get_cookies(self._config))
         self.c_mgr = colored_opt()
+        self.headers_list = [
+            activity_list(self.cookies['UID']),
+            activity_sub_domain(),
+            activity_HTML(sub_domain),
+            activity_information(sub_domain),
+            activity_describe(sub_domain),
+            activity_css(sub_domain),
+            account_cookies()
+        ]
+        self.datas_list = [
+            Datas(),
+            activity_list_data(self.cookies['wfwfid']),
+            activity_information_data()
+            ]
+        self.headers = self.headers_list[headers_id]
+        self.datas = self.datas_list[datas_id]
         self.session = requests.session()
-        if not args :
-            self.headers,self.request_data = self.read_head_file(headers_path)
-
-    # TODO:分离headers和data
-    def read_head_file(self,file_path:str)  -> Tuple[Dict[str,str],str]:
-        """
-        读取文件，返回字典和data
-        Args:
-            file_path(str): 文件路径
-        Returns:
-            Tuple:
-                - headers: 请求头
-                - data: 请求data
-        """
-        def split_lines(line:str) -> tuple:
-            index = line.find(":")
-            assert index,'未找到":"'
-            key = line[:index]
-            value = line[index+2:]
-            return (key,value)
-        headers:Dict[str,str] = {}
-        request_data:str = ""
-        with open(file_path,'r') as headers_f:
-
-            while True:
-                header_option = headers_f.readline().strip()
-                if not header_option : break
-                k_v = split_lines(header_option)
-                if k_v[0] == "data":
-                    request_data = k_v[1]
-                else:
-                    headers[k_v[0]] = k_v[1]
-        return (headers,request_data)
+        self.session.headers.update(dict(self.headers))
+        self.session.cookies.update(self.cookies)
 
     def split_cookies(self,cookies:str) -> dict:
         """
@@ -89,9 +78,9 @@ class fetch:
         """
         request_url = self.source_url + self.backend_api
         requests_head = []
-        requests_data = self.request_data
+        requests_data = self.datas
         
-        for k,v in self.headers.items():
+        for k,v in dict(self.headers).items():
             if len(v)>50:
                 v = v[:48] + self.c_mgr.yellow + self.c_mgr.default + "..." + self.c_mgr.default
             requests_head.append(f"{self.c_mgr.blue}{k}{self.c_mgr.default}: {v}") 
@@ -108,7 +97,8 @@ class get_activity(fetch):
     用于获取当前课程列表
     """
     def __init__(self):
-        super().__init__("headFolder/activity_headers.txt",'https://hd.chaoxing.com','/hd/api/activity/list/participate')
+        super().__init__(0,'https://hd.chaoxing.com','/hd/api/activity/list/participate',1)
+        self.datas = "data=" + self.datas.get_data('utf8') + "&pageNum=1&pageSize=10"
         self.json = self.get_activity_json()
 
     def get_activity_json(self) -> str:
@@ -117,8 +107,7 @@ class get_activity(fetch):
         """
         request_url = self.source_url + self.backend_api
         chaoxing_response = self.session.post(request_url,
-                                              headers=self.headers
-                                              ,data=self.request_data,
+                                              data=self.datas,
                                               cookies=self.cookies)
         
         self.connect_code = chaoxing_response.status_code
@@ -137,16 +126,13 @@ class get_activity_HTML(fetch):
             sub_domain: 302重定向返回时的Location最后一级域名
             page_id: 课程中的pageId
         """
-        super().__init__("headFolder/activity_html_headers.txt",
+        super().__init__(2,
                          f"https://{sub_domain}.mh.chaoxing.com",
-                         f"/entry/page/{page_id}/show")
+                         f"/entry/page/{page_id}/show",sub_domain=sub_domain)
         self.raw_html = self._get_html()
     def _get_html(self):
         url = self.source_url + self.backend_api
-        response = self.session.get(url,
-                        headers=self.headers,
-                        cookies=self.cookies,
-                        )
+        response = self.session.get(url)
         self.connect_code = response.status_code
         self.response_text = response.text
         self.session.close()
@@ -168,7 +154,7 @@ class get_302_Location(fetch):
         Args:
             class_id: 每个课程的Id
         """
-        super().__init__("headFolder/domain_activity_information_headers.txt", "https://hd.chaoxing.com", f"/hd/activity/{class_id}")
+        super().__init__(1, "https://hd.chaoxing.com", f"/hd/activity/{class_id}")
         self.domain = self._get_domain()
     def _get_domain(self) -> str:
         """
@@ -177,11 +163,7 @@ class get_302_Location(fetch):
             str: 8位字母+数字组合
         """
         url = self.source_url + self.backend_api
-        response = self.session.get(url,
-                            headers=self.headers,
-                            cookies=self.cookies,
-                            allow_redirects=False,
-                            )
+        response = self.session.get(url,allow_redirects=False)
         domain = response.headers.get('Location')
         self.connect_code = response.status_code
         self.response_text = response.text
@@ -201,24 +183,20 @@ class get_activity_detial(fetch):
             website_id: 课程列表中的websiteId
             sub_domain: 302重定向时的最后一级域名
         """
-        super().__init__("headFolder/activity_information_headers.txt", "https://api.hd.chaoxing.com", "/mh/v3/activity/info")
+        super().__init__(3, "https://api.hd.chaoxing.com", "/mh/v3/activity/info",2,sub_domain=sub_domain)
         self.page_id = page_id
         self.website_id = website_id
         self.sub_domain = sub_domain
         self.json = self._get_json()
     def _get_json(self):
-        tmp = self.headers["Origin"][:8] + self.sub_domain + self.headers["Origin"][16:]
         url = self.source_url + self.backend_api
-        self.headers["Origin"] = tmp
-        self.headers["Referer"] = tmp + "/"
-        self.request_data = json.loads(self.request_data)
-        self.request_data["pageId"] = self.page_id
-        self.request_data["websiteId"] = self.website_id
-        session = requests.session()
-        response = session.post(url,
-                     headers=self.headers,
-                     cookies=self.cookies,
-                     json=self.request_data)
+        self.datas.set("pageId",self.page_id)
+        self.datas.set("websiteId",self.website_id)
+        self.datas.set("wfwfid",self.cookies['wfwfid'])
+        self.datas.set("vc3",self.cookies['vc3'])
+        self.datas.set("_d",self.cookies['sso_t'])
+        response = self.session.post(url,
+                     json=dict(self.datas))
         self.connect_code = response.status_code
         self.response_text = response.text
         self.session.close()
@@ -226,7 +204,7 @@ class get_activity_detial(fetch):
 
 class get_activity_describe(fetch):
     """用于获取课程描述信息"""
-    def __init__(self, page_id,website_id,wfwfid) -> None:
+    def __init__(self, page_id,website_id) -> None:
         """
         获取描述信息
         Args:
@@ -234,15 +212,15 @@ class get_activity_describe(fetch):
             website_id: 课程列表中的websiteId
             wfwfid: HTML结构中的p_wfwfid变量值
         """
-        super().__init__("headFolder/describe_headers.txt",
+        super().__init__(4,
                          "https://hd.chaoxing.com",
-                         f"/api/activity/introduction?pageId={page_id}&current_pageId={page_id}&current_websiteId={website_id}&current_wfwfid={wfwfid}")
+                         f"/api/activity/introduction?pageId={page_id}&current_pageId={page_id}&current_websiteId={website_id}&current_wfwfid=")
+        self.backend_api+=self.cookies['wfwfid']
+
         self.describe = self._get_describe()
     def _get_describe(self):
         url = self.source_url + self.backend_api
-        response = self.session.post(url,
-                     headers=self.headers,
-                     json=self.request_data)
+        response = self.session.post(url)
         self.connect_code = response.status_code
         self.response_text = response.text
         self.session.close()
@@ -256,29 +234,79 @@ class get_css(fetch):
         Args:
             sub_domain: 302重定向时的最后一级域名
         """
-        super().__init__("headFolder/css_file_headers.txt"," https://pc.chaoxing.com","/res/css/subscribe/pop.css?v=4")
+        super().__init__(5," https://pc.chaoxing.com","/res/css/subscribe/pop.css?v=4",sub_domain=sub_domain)
         self.sub_domain = sub_domain
 
         self.css = self._get_css() 
     def _get_css(self):
         url = self.source_url + self.backend_api
-        tmp = self.headers["Referer"][:8] + self.sub_domain + self.headers["Referer"][16:]
-        self.headers["Referer"] = tmp
-        # self.headers["If-Modified-Since"] = ""
-        response = self.session.get(url,
-                        headers=self.headers,
-                        cookies=self.cookies,
-                        )
+        response = self.session.get(url)
         self.connect_code = response.status_code
         self.response_text = response.text
         self.session.close()
         return response.text
     
-
-
+class get_cookies:
+    def __init__(self,config_exam:Config) -> None:
+        self._config = config_exam
+        self.session = requests.session()
+        self.cipher = AESCipher()
+        self.url = "https://passport2.chaoxing.com/fanyalogin"
+        self.headers = dict(account_cookies())
+        self.data = {
+            "fid": "-1",
+            "uname": self.cipher.encrypt(self._config.user_name),
+            "password": self.cipher.encrypt(self._config.password),
+            "refer": "https%3A%2F%2Fi.chaoxing.com",
+            "t": True,
+            "forbidotherlogin": 0,
+            "validate": "",
+            "doubleFactorLogin": 0,
+            "independentId": 0,
+        }
+        if self._config.use_cookies:
+            cookies_file = open(self._config.cookies_file_path,'r',encoding='utf8')
+            self.cookies = self.split_cookies(cookies_file.read())
+        else:
+            self.cookies = self._generate_cookies()
+        
+    def split_cookies(self,cookies:str) -> dict:
+        """
+        切割cookies
+        Args:
+            cookies(str): cookies字符串
+        Returns:
+            dict: 符合requests的字典dict
+        """
+        if not cookies:
+            return {}
+        cookie_dict = {}
+        for part in cookies.split(';'):
+            part = part.strip()
+            if not part:
+                continue
+            if '=' in part:
+                k, v = part.split('=', 1)
+                cookie_dict[k.strip()] = v.strip()
+            else:
+                cookie_dict[part] = ''
+        return cookie_dict
+    
+    def _generate_cookies(self) -> dict:
+        resp = self.session.post(self.url, headers=self.headers, data=self.data)
+        if resp and resp.json()["status"] == True:
+            return dict(resp.cookies)
+        else:
+            raise EOFError("response failed")
+    
+    def debug(self):
+        print(self.cookies)
+    def __iter__(self):
+        return iter(self.cookies.items())
+        
 if __name__ == "__main__":
     # For test. qwq
-    test_target = 5
+    test_target = 3
     if test_target == 0:
         test = get_activity()
         print(test.get_info())
@@ -293,14 +321,16 @@ if __name__ == "__main__":
         print(test.get_info())
         print(test.domain)
     elif test_target == 3:
-        test = get_activity_detial(2305690,950312,"5o9skajr")
+        test = get_activity_detial(2314590,952517,"5oy65hti")
         print(test.get_info())
         print(test.json)
     elif test_target == 4:
-        test = get_activity_describe(2305690,950312,296090)
+        test = get_activity_describe(2305690,950312)
         print(test.get_info())
         print(test.describe)
     elif test_target == 5:
         test = get_css("5o9skajr")
         print(test.get_info())
-
+    elif test_target == 6:
+        test =  get_cookies(Config())
+        print(test.cookies)

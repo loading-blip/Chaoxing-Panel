@@ -1,0 +1,15 @@
+Config:
+  # 配置文件版本，勿动
+  version: 0.1
+
+Account:
+  # 是否使用cookies登录
+  use_cookies: True
+  # cookies文件夹位置
+  cookies_file_path: "clue/cookies_new.txt"
+  # 用户名/手机号
+  username: ""
+  # 密码
+  password: ""
+  
+# Device:

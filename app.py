@@ -61,7 +61,7 @@ class backend_web:
             return jsonify(json.dumps(response))
         
     def run_app(self):
-        self.app.run(port=5000,debug=True)
+        self.app.run(port=5000)
 
 class HTMLTextExtractor(HTMLParser):
     """HTML标签移除器"""
@@ -246,7 +246,7 @@ class sharedData:
 shared_data = sharedData()
 
 if __name__ == "__main__":
-    running_code = 1
+    running_code = 0
     
     activity_exam = chaoxing_activity()
     if running_code:
@@ -260,5 +260,4 @@ if __name__ == "__main__":
         web_threading.run()
     else:
         activity_exam.run_request()
-        print(activity_exam)
 

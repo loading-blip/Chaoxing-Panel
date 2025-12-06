@@ -47,8 +47,8 @@ class activity_constructer:
         self.belong_group = ["信息工程学院","8号楼","线上"]
         self.organisers = raw_json["organisers"]
 
-        self.wfwfid = get_activity_HTML(self.sub_domain,raw_json["pageId"])
-        self.activity_describe = get_activity_describe(raw_json["pageId"],raw_json["websiteId"],self.wfwfid)
+        # self.wfwfid = get_activity_HTML(self.sub_domain,raw_json["pageId"])
+        self.activity_describe = get_activity_describe(raw_json["pageId"],raw_json["websiteId"])
         self.describe = self.activity_describe.describe
         self.friendly_class_name = self.name
         self.friendly_address_name = self.address
