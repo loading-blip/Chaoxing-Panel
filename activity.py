@@ -7,9 +7,16 @@ import os
 from get_activity import get_activity_describe,get_activity_detial,get_302_Location,get_activity_HTML
 from u033_tools import colored_opt
 
+###########################
+#   此文件内存放超星功能体
+#   若需要新增功能
+#   可以在这新建类
+############################
+
+
 class activity_constructer:
     """
-    第二课堂活动类，将json数据处理，提供当前课程报名状态
+    第二课堂活动列表，将json数据处理，提供当前课程报名状态
     """
 
     @overload
@@ -89,6 +96,7 @@ class activity_constructer:
             year_index = raw_time.find("年")
             month_index = raw_time.find("月")
             day_index = raw_time.find("日")
+            # 海象运算符来着，不然要多写两行
             time_index = l if (l:=raw_time.find(":"))>(r:=raw_time.find("：")) else r
             
             if year_index != -1:

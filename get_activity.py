@@ -1,17 +1,23 @@
 import requests
-# from urllib.parse import unquote
 from u033_tools import colored_opt
-from typing import Dict,Tuple
 import re
-import json
 from request_info import *
 from cipher import AESCipher
 from config import Config
 
+#####################################
+#   此文件内存放各种页面的请求方法
+#   每个类都有.get_info()用于调试
+#   若需要增加新功能
+#   新功能的请求代码段需要集中存放于此
+#####################################
+
+
 class fetch:
     """
-    get父类，封装了点对超星客制化的功能
+    所有请求的父类，封装了点对超星客制化的功能
     """
+    # HACK: 减少传参内容
     def __init__(self,headers_id:int,source_url:str,backend_api:str,datas_id=0,sub_domain="") -> None:
         """
         父类请求函数
@@ -19,7 +25,8 @@ class fetch:
             headers_id(str): 头部请求记录文件，当前版本data数据也写进header记录中了
             source_url(str): 请求域名url，如：`https://example.com`
             backend_api(str): 请求接口路径，如：`/api/xxx`
-        
+            datas_id(int): 需要加载的data类
+            sub_domain(str): 此请求需要的sub_domain
         """
         self.source_url = source_url
         self.backend_api = backend_api
@@ -247,6 +254,7 @@ class get_css(fetch):
         return response.text
     
 class get_cookies:
+    # 获取cookies的类需要独立父类
     def __init__(self,config_exam:Config) -> None:
         self._config = config_exam
         self.session = requests.session()

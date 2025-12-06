@@ -2,6 +2,11 @@ from typing import override,Iterator,Tuple
 from urllib.parse import unquote,quote
 import json
 
+#################################
+#   此文件内存放请求头，请求体
+#   使用dict()对此文档里的类
+#   都可以被显式转换
+################################
 
 class Headers:
     def __init__(self) -> None:
@@ -15,6 +20,33 @@ class Headers:
         yield ('Accept-Language',self.AcceptLanguage)
         yield ('Accept-Encoding',self.AcceptEncoding)
         yield ('User-Agent',self.UserAgent)
+
+class Datas:
+    def __init__(self) -> None:
+        self._data = {}
+        
+    def load_str(self,string,encode='raw') -> None:
+        if encode=="raw":
+            tmp = string
+        elif encode == "utf8":
+            tmp = unquote(string)
+        else:
+            raise TypeError("Unkonwn type:"+encode)
+        self._data = json.loads(tmp)
+
+    def get_data(self,endcode='raw') -> str:
+        tmp = json.dumps(self._data)
+        if endcode == "utf8":
+            return quote(tmp)
+        return tmp
+    
+    def get_json(self) ->dict:
+        return self._data
+    
+    def set_data(self,data_dict:dict):
+        self._data = data_dict
+    def __iter__(self):
+        return iter(self._data.items())
 
 class activity_list(Headers):
     def __init__(self,UID) -> None:
@@ -173,34 +205,6 @@ class account_cookies(Headers):
         yield ('sec-ch-ua',self.secchua)
         yield ('sec-ch-ua-platform',self.secchuaplatform)
 
-class Datas:
-    def __init__(self) -> None:
-        self._data = {}
-        
-    def load_str(self,string,encode='raw') -> None:
-        if encode=="raw":
-            tmp = string
-        elif encode == "utf8":
-            tmp = unquote(string)
-        else:
-            raise TypeError("Unkonwn type:"+encode)
-        self._data = json.loads(tmp)
-
-    def get_data(self,endcode='raw') -> str:
-        tmp = json.dumps(self._data)
-        if endcode == "utf8":
-            return quote(tmp)
-        return tmp
-    
-    def get_json(self) ->dict:
-        return self._data
-    
-    def set_data(self,data_dict:dict):
-        self._data = data_dict
-    def __iter__(self):
-        return iter(self._data.items())
-
-    
 class activity_list_data(Datas):
     def __init__(self,wfwid) -> None:
         super().__init__()

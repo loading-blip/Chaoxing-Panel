@@ -27,9 +27,11 @@ class colored_opt:
 
 class Terminal_support:
     def __init__(self) -> None:
+        """### 仅适用于Windows Terminal或VSCode中的终端"""
         self.link_sign = "\033]8;;"
 
     def println_link(self,url:str,text:str,mode=False) -> str:
+        # \033]8;;{url}\a{txt}\033]8;;\a   ===>  _txt_
         string = f'{self.link_sign}{url}\a{text}{self.link_sign}\a'
         if mode:
             print(string)
