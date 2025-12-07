@@ -3,9 +3,16 @@ import time
 import datetime
 import json
 import os
+import logging
+import sys
+from tqdm import tqdm
+from typing import List,Dict
+from tabulate import tabulate
+import threading
 
-from get_activity import get_activity_describe,get_activity_detial,get_302_Location,get_activity_HTML
-from u033_tools import colored_opt
+from html.parser import HTMLParser
+from get_activity import get_activity_describe,get_activity_detial,get_302_Location,get_activity
+from u033_tools import colored_opt,Terminal_support
 
 ###########################
 #   此文件内存放超星功能体
@@ -13,8 +20,75 @@ from u033_tools import colored_opt
 #   可以在这新建类
 ############################
 
+class SharedData:
+    """线程数据共享类"""
+    def __init__(self) -> None:
+        self.status = "not_yet"
+        self.current_work = "initialization..."
+        self.current_quantity = 0
+        self.quantity = 10
+        self.data_json:List[Dict[str,str]] = []
+        self.lock = threading.Lock()
+    
+    def reload(self):
+        self.status = "not_yet"
+        self.current_work = "initialization..."
+        self.current_quantity = 0
+        self.quantity = 10
+        self.data_json: List[Dict[str, str]] = []
 
-class activity_constructer:
+    def get_status(self):
+        with self.lock:
+            return self.status
+    
+    def get_current_work(self):
+        with self.lock:
+            return self.current_work
+    
+    def get_data_json(self):
+        with self.lock:
+            return self.data_json
+        
+    def set_status(self,value):
+        with self.lock:
+            self.status = value
+    
+    def set_current_work(self,value):
+        with self.lock:
+            self.current_work = value
+    
+    def set_data_json(self,value:List[Dict[str,str]]):
+        with self.lock:
+            self.data_json = value
+    def get_current_quantity(self):
+        with self.lock:
+            return self.current_quantity
+    def get_quantity(self):
+        with self.lock:
+            return self.quantity
+    def set_current_quantity(self,value):
+        with self.lock:
+            self.set_current_quantity = value
+    def set_quantity(self,value):
+        with self.lock:
+            self.quantity = value
+    def acc_current_quantity(self):
+        with self.lock:
+            self.current_quantity += 1
+
+class HTMLTextExtractor(HTMLParser):
+    """HTML标签移除器"""
+    def __init__(self):
+        super().__init__()
+        self.result = []
+    
+    def handle_data(self, data):
+        self.result.append(data)
+    
+    def get_text(self):
+        return ''.join(self.result)
+
+class Activity_information_constructer:
     """
     第二课堂活动列表，将json数据处理，提供当前课程报名状态
     """
@@ -192,9 +266,140 @@ class activity_constructer:
             html_file.write(document)
             html_file.write(raw_tail)
         
+class Chaoxing_activity:
+    """第二课堂数据获取类"""
+    def __init__(self,shared_data):
+        self.raw_data =[]
+        self.data:List[Dict[str,str]] = []
+        self.shared_data = shared_data
 
+    def run_request(self):
+        self.raw_data = self.get_data()
+        self.data = self.format_data(self.raw_data)
+
+        print(self)
+
+        self.shared_data.set_current_work(f'完成!')
+        self.shared_data.set_status("Done")
+        self.shared_data.set_data_json(self.data)
+
+    # requests动态获取第二课堂JSON
+    def _get_activity_list_json(self)-> dict: 
+        activity_raw = get_activity().get_activity_json()
+        return json.loads(activity_raw)
+    # return json.load(open("dier.json",'r',encoding='utf8'))
+    def get_data(self):
+        self.shared_data.set_current_work("正在获取第二课堂列表中...")
+        activity_json = self._get_activity_list_json()
+        if activity_json['code']!= 1 : 
+            logging.error("返回结果有误")
+            sys.exit(1)
+
+        if not os.path.exists("tmp"):
+            os.mkdir("tmp")
+
+        process_bar = tqdm(total=len(activity_json['data']['records']))
+        activity_list:List[Activity_information_constructer] = []
+
+        for activity in activity_json['data']['records']:
+            self.shared_data.set_current_work(f'正在获取"{activity["name"]}"的详细信息...')
+            self.shared_data.acc_current_quantity()
+            activity_list.append(Activity_information_constructer(activity))
+            process_bar.update(1)
+            # time.sleep(1)
+        process_bar.close()
+        return activity_list
+    def format_data(self,raw_data:List[Activity_information_constructer]) -> List[Dict[str,str]]:
+        activities = []
+        # HACK: 代码重复，下次重构解决
+        for activity in raw_data:
+            self.shared_data.set_current_work(f'正在处理"{activity.name}"的详细信息...')
+            
+            html = HTMLTextExtractor()
+            html.feed(activity.describe)
+            start_time = "无" if not activity.start_time else time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.start_time))
+            end_time = "无" if not activity.end_time else time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.end_time))
+            class_start_time = time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.class_start_time))
+            class_end_time = time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.class_end_time))
+            describe = html.get_text() if len(html.get_text()) < 15 else html.get_text()[:12]+"..."
+
+            status = activity.get_status()
+            report = ""
+            # 金色为人数过半，绿色为人数空闲或无上限，蓝色为未开始，灰色为过期或无资格
+            # 此处为包含所有可报名的可能
+            if status["time"] == "closed" or not status["belong"]:  report = "unavailable"
+            elif status["time"] == "not_started":                   report = "not_started"
+            elif status["reg"] == "full":                           report = "full"
+            elif status["reg"] == "busy":                           report = "busy"
+            else:                                                   report = "great_chance"
+
+            activity_dict = {
+            "名称":activity.name,
+            "人数":f"{activity.current_people if activity.current_people else "∞"}/{activity.maxium_people if activity.maxium_people else "∞"}",
+            "位置":activity.address,
+            "报名开始时间":start_time,
+            "报名结束时间":end_time,
+            "活动开始时间":class_start_time,
+            "活动结束时间":class_end_time,
+            "描述":describe,
+            "status": report,
+            }
+            activities.append(activity_dict)
+        return activities
+    def __str__(self):
+        # HACK: 代码重复，下次重构解决
+        current_path = os.getcwd()
+        c_mgr = colored_opt()
+
+        opt_list = [[f"{c_mgr.light_blue}名称{c_mgr.default}",
+                    f"{c_mgr.light_blue}人数{c_mgr.default}",
+                    f"{c_mgr.light_blue}位置{c_mgr.default}",
+                    f"{c_mgr.light_blue}报名开始时间{c_mgr.default}",
+                    f"{c_mgr.light_blue}报名结束时间{c_mgr.default}",
+                    f"{c_mgr.light_blue}活动开始时间{c_mgr.default}",
+                    f"{c_mgr.light_blue}活动结束时间{c_mgr.default}",
+                    f"{c_mgr.light_blue}描述{c_mgr.default}"
+                    ],
+                    ]
+
+        for activity in self.raw_data:
+            #TODO:正在制作过滤已结束输出的选项
+            status = activity.get_status()
+            color = ""
+            # 金色为人数过半，绿色为人数空闲或无上限，蓝色为未开始，灰色为过期或无资格
+            # 此处为包含所有可报名的可能
+            if status["time"] == "closed" or not status["belong"]:  color = c_mgr.half_light
+            elif status["time"] == "not_started":                   color = c_mgr.blue
+            elif status["reg"] == "full":                           color = c_mgr.red
+            elif status["reg"] == "busy":                           color = c_mgr.yellow 
+            else:                                                   color = c_mgr.green 
+            
+            html = HTMLTextExtractor()
+            html.feed(activity.describe)
+
+            describe = html.get_text() if len(html.get_text()) < 15 else html.get_text()[:12]+"..."
+
+
+            start_time = "无" if not activity.start_time else time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.start_time))
+            end_time = "无" if not activity.end_time else time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.end_time))
+            class_start_time = time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.class_start_time))
+            class_end_time = time.strftime("%Y-%m-%d %H:%M", time.localtime(activity.class_end_time))
+            
+            opt_list.append([color+activity.friendly_class_name+c_mgr.default,
+                            f"{activity.current_people if activity.current_people else "∞"}/{activity.maxium_people if activity.maxium_people else "∞"}",
+                            activity.friendly_address_name,
+                            start_time,
+                            end_time,
+                            class_start_time,
+                            class_end_time,
+                            Terminal_support().println_link("file://"+os.path.join(current_path,"tmp",f"{activity.id}.html").replace('\\', '/'),describe)
+                            ])
+
+        table = tabulate(opt_list, headers="firstrow", tablefmt="grid")
+
+        return table
 
 if __name__ == "__main__":
-    test = activity_constructer(json.load(open("dier.json",'r',encoding='utf8'))['data']['records'][0],json.load(open("dier2.json",'r',encoding='utf8')))
+    test = Activity_information_constructer(json.load(open("dier.json",'r',encoding='utf8'))['data']['records'][0],json.load(open("dier2.json",'r',encoding='utf8')))
     print(test.start_time,test.end_time)
     
