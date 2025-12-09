@@ -11,7 +11,7 @@ from tabulate import tabulate
 import threading
 
 from html.parser import HTMLParser
-from get_activity import get_activity_describe,get_activity_detial,get_302_Location,get_activity
+from get_activity import *
 from u033_tools import colored_opt,Terminal_support
 
 ###########################
@@ -27,7 +27,8 @@ class SharedData:
         self.current_work = "initialization..."
         self.current_quantity = 0
         self.quantity = 10
-        self.data_json:List[Dict[str,str]] = []
+        self.data_json = []
+        self.session = ""
         self.lock = threading.Lock()
     
     def reload(self):
@@ -35,7 +36,8 @@ class SharedData:
         self.current_work = "initialization..."
         self.current_quantity = 0
         self.quantity = 10
-        self.data_json: List[Dict[str, str]] = []
+        self.session = ""
+        self.data_json = []
 
     def get_status(self):
         with self.lock:
@@ -57,7 +59,14 @@ class SharedData:
         with self.lock:
             self.current_work = value
     
-    def set_data_json(self,value:List[Dict[str,str]]):
+    def set_session(self,value):
+        with self.lock:
+            self.session = value
+
+    def get_session(self):
+        with self.lock:
+            return self.session
+    def set_data_json(self,value):
         with self.lock:
             self.data_json = value
     def get_current_quantity(self):
@@ -129,7 +138,7 @@ class Activity_information_constructer:
         self.organisers = raw_json["organisers"]
 
         # self.wfwfid = get_activity_HTML(self.sub_domain,raw_json["pageId"])
-        self.activity_describe = get_activity_describe(raw_json["pageId"],raw_json["websiteId"])
+        self.activity_describe = get_activity_describe(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
         self.describe = self.activity_describe.describe
         self.friendly_class_name = self.name
         self.friendly_address_name = self.address
@@ -399,7 +408,51 @@ class Chaoxing_activity:
 
         return table
 
+class Chaoxing_transcript:
+    def __init__(self,shared_data:SharedData) -> None:
+        self.real_name = ""
+        self.max_score:float = 0.0
+        self.act_type = []
+        self.act_record = []
+        self.shared_data = shared_data
+
+        self._act_type:get_activity_type
+        self._act_record:get_activity_record
+
+    def run_request(self):
+        self.shared_data.set_current_work("正在获取参与过的项目....")
+        self.act_record = self.get_record()
+
+        self.shared_data.set_current_work("正在获取学校积分类型....")
+        self.act_type = self.get_type()
+
+        self.shared_data.set_current_work(f'完成!')
+        self.shared_data.set_status("Done")
+        self.shared_data.set_data_json(self.get_pack())
+
+    def get_record(self):
+        self._act_record = get_activity_record()
+        self.real_name = self._act_record.json[0]['userName']
+        return self._act_record.json
+    
+    def get_type(self):
+        if not self.real_name:
+            self.act_record = self.get_record()
+        self._act_type = get_activity_type(self.real_name)
+        for type in self._act_type.json:
+            self.max_score += type['minScore'] if type['minScore'] else 0.0
+        return self._act_type.json
+
+    def get_pack(self):
+        return {
+            "max_score": self.max_score,
+            "realName": self.real_name,
+            "type_data": self.act_type,
+            "records": self.act_record
+        }
+
 if __name__ == "__main__":
-    test = Activity_information_constructer(json.load(open("dier.json",'r',encoding='utf8'))['data']['records'][0],json.load(open("dier2.json",'r',encoding='utf8')))
-    print(test.start_time,test.end_time)
+    test = Chaoxing_transcript(SharedData())
+    test.run_request()
+    print(test.get_pack())
     

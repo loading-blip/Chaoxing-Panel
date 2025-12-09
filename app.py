@@ -4,7 +4,7 @@ import threading
 
 
 from flask import Flask,make_response,request,jsonify,abort
-from activity import Chaoxing_activity,SharedData
+from activity import Chaoxing_activity,SharedData,Chaoxing_transcript
 
 class Backend_web:
     """后端服务器类"""
@@ -34,13 +34,15 @@ class Backend_web:
         def ret_status():
             if self.shared_data.get_status() == "Done":
                 status = {"status":"complete",
-                          "complete":True}
+                          "complete":True,
+                          "session":self.shared_data.get_session()}
             else:
                 status = {"status":"working",
                           "current_work":self.shared_data.get_current_work(),
                           "current_quantity":self.shared_data.get_current_quantity(),
                           "quantity":self.shared_data.get_quantity(),
-                          "complete":False}
+                          "complete":False,
+                          "session":self.shared_data.get_session()}
             return jsonify(json.dumps(status))
 
         @self.app.route('/data', methods=['GET', 'OPTIONS'])
@@ -54,7 +56,10 @@ class Backend_web:
                 status_code = 200
             activity_list = self.shared_data.get_data_json()
 
-            response = {"code":status_code,"data":activity_list}
+            response = {"code":status_code,
+                        "data":activity_list,
+                        "session":self.shared_data.get_session()
+                        }
             return jsonify(json.dumps(response))
         
         @self.app.route('/service',methods=['POST'])
@@ -65,7 +70,14 @@ class Backend_web:
             need_service = json_text['use']
             if need_service == "get_activity":
                 self.shared_data.reload()
+                self.shared_data.set_session("get_activity")
                 data_threading = threading.Thread(target=activity_exam.run_request)
+                data_threading.start()
+                code = 200
+            elif need_service == "transcript":
+                self.shared_data.reload()
+                self.shared_data.set_session("transcript")
+                data_threading = threading.Thread(target=activity_Transcript.run_request)
                 data_threading.start()
                 code = 200
             else:
@@ -83,6 +95,7 @@ if __name__ == "__main__":
     shared_data = SharedData()
 
     activity_exam = Chaoxing_activity(shared_data)
+    activity_Transcript = Chaoxing_transcript(shared_data)
     if running_code:
         backend_exam = Backend_web(shared_data)
         web_threading = threading.Thread(target=backend_exam.run_app)

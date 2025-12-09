@@ -4,6 +4,7 @@ import json
 
 #################################
 #   此文件内存放请求头，请求体
+#   此文档class命名为获取到的内容含义
 #   使用dict()对此文档里的类
 #   都可以被显式转换
 ################################
@@ -45,6 +46,9 @@ class Datas:
     
     def set_data(self,data_dict:dict):
         self._data = data_dict
+
+    def set_value(self,k,v) ->None :...
+    
     def __iter__(self):
         return iter(self._data.items())
 
@@ -205,6 +209,65 @@ class account_cookies(Headers):
         yield ('sec-ch-ua',self.secchua)
         yield ('sec-ch-ua-platform',self.secchuaplatform)
 
+class activity_type(Headers):
+    def __init__(self,UID) -> None:
+        super().__init__()
+        self.Host = 'hd.chaoxing.com'
+        self.XRequestedWith = 'XMLHttpRequest'
+        self.SecFetchSite = 'same-origin'
+        self.SecFetchMode = 'cors'
+        self.ContentType = 'application/x-www-form-urlencoded; charset=UTF-8'
+        self.Origin = 'https://hd.chaoxing.com'
+        self.ContentLength = '109'
+        self.Connection = 'keep-alive'
+        self.SecFetchDest = 'empty'
+        self.Referer = f'https://hd.chaoxing.com/second-classroom/result?fidEnc=12f635a11338a4b0&uid={UID}&mappId=19057375&mappIdEnc=d7a3b91b7fd8fa43f363477f220e1829&wfwEnc=C8DCDC5DB460151F998849FC72FEDABC&appId=881d2ff10f874628a8ba7acd577fd54c&appKey=nyDE2p13PU42yab5&code=PJa89eVa&state=296090'
+
+    @override
+    def __iter__(self):
+        for item in super().__iter__():
+            yield item
+        yield ('Host',self.Host)
+        yield ('X-Requested-With',self.XRequestedWith)
+        yield ('Sec-Fetch-Site',self.SecFetchSite)
+        yield ('Sec-Fetch-Mode',self.SecFetchMode)
+        yield ('Content-Type',self.ContentType)
+        yield ('Origin',self.Origin)
+        yield ('Content-Length',self.ContentLength)
+        yield ('Connection',self.Connection)
+        yield ('Sec-Fetch-Dest',self.SecFetchDest)
+        yield ('Referer',self.Referer)
+
+class activity_record(Headers):
+    def __init__(self,UID) -> None:
+        super().__init__()
+        self.Host = 'hd.chaoxing.com'
+        self.XRequestedWith = 'XMLHttpRequest'
+        self.SecFetchSite = 'same-origin'
+        self.SecFetchMode = 'cors'
+        self.ContentType = 'application/x-www-form-urlencoded; charset=UTF-8'
+        self.Origin = 'https://hd.chaoxing.com'
+        self.ContentLength = '120'
+        self.Connection = 'keep-alive'
+        self.SecFetchDest = 'empty'
+        self.Referer = f'https://hd.chaoxing.com/second-classroom/result?fidEnc=12f635a11338a4b0&uid={UID}&mappId=19057375&mappIdEnc=d7a3b91b7fd8fa43f363477f220e1829&wfwEnc=C8DCDC5DB460151F998849FC72FEDABC&appId=881d2ff10f874628a8ba7acd577fd54c&appKey=nyDE2p13PU42yab5&code=PJa89eVa&state=296090'
+
+
+    @override
+    def __iter__(self):
+        for item in super().__iter__():
+            yield item
+        yield ('Host',self.Host)
+        yield ('X-Requested-With',self.XRequestedWith)
+        yield ('Sec-Fetch-Site',self.SecFetchSite)
+        yield ('Sec-Fetch-Mode',self.SecFetchMode)
+        yield ('Content-Type',self.ContentType)
+        yield ('Origin',self.Origin)
+        yield ('Content-Length',self.ContentLength)
+        yield ('Connection',self.Connection)
+        yield ('Sec-Fetch-Dest',self.SecFetchDest)
+        yield ('Referer',self.Referer)
+
 class activity_list_data(Datas):
     def __init__(self,wfwid) -> None:
         super().__init__()
@@ -247,9 +310,45 @@ class activity_information_data(Datas):
             "_d": "" # FILL
         }
     
-    def set(self,k,v):
+    @override
+    def set_value(self,k,v):
         if k in self._data.keys():
             self._data[k] = v
         else:
             raise NameError("Key Error",k)
         
+class activity_type_data(Datas):
+    def __init__(self,UID,realName,wfwfid) -> None:
+        super().__init__()
+        self._data = f"uid={UID}&realName={quote(realName)}&fid={wfwfid}&inspectionPlanId=159&schoolYear=&orgConfigId=91"
+
+    @override
+    def get_data(self, endcode='raw') -> str:
+        if endcode == "utf8":
+            return quote(self._data)
+        return self._data
+    
+    @override
+    def get_json(self) ->dict:
+        raise ValueError('Please use get_data to get string Datas')
+
+    def __str__(self) -> str:
+        return self.get_data()
+
+class activity_record_data(Datas):
+    def __init__(self,UID,wfwfid) -> None:
+        super().__init__()
+        self._data = f"uid={UID}&fid={wfwfid}&inspectionPlanId=159&credit=&timeOrder=DESC&pageNum=1&pageSize=10000&schoolYear=&orgConfigId=91"
+
+    @override
+    def get_data(self, endcode='raw') -> str:
+        if endcode == "utf8":
+            return quote(self._data)
+        return self._data
+    
+    @override
+    def get_json(self) ->dict:
+        raise ValueError('Please use get_data to get string Datas')
+    
+    def __str__(self) -> str:
+        return self.get_data()
