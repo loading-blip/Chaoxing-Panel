@@ -92,10 +92,10 @@ class Get_activity(fetch):
     def __init__(self):
         self._config = Config()
         cookies = dict(get_cookies(self._config))
-        super().__init__(cookies,activity_list(cookies['UID']),
+        super().__init__(cookies,Activity_list(cookies['UID']),
                          'https://hd.chaoxing.com',
                          '/hd/api/activity/list/participate',
-                         activity_list_data(cookies['wfwfid']))
+                         Activity_list_data(cookies['wfwfid']))
         self.datas_string = "data=" + self.datas.get_data('utf8') + "&pageNum=1&pageSize=10"
         self.json = self.Get_activity_json()
 
@@ -113,7 +113,7 @@ class Get_activity(fetch):
         self.session.close()
         return self.response_text
 
-class Get_activity_HTML(fetch):
+class Get_Activity_HTML(fetch):
     """
     用于获取当前课程HTML结构，但主要功能为获取wfwf_Id
     """
@@ -126,7 +126,7 @@ class Get_activity_HTML(fetch):
         """
         self._config = Config()
         cookies = dict(get_cookies(self._config))
-        super().__init__(cookies,activity_HTML(sub_domain),
+        super().__init__(cookies,Activity_HTML(sub_domain),
                          f"https://{sub_domain}.mh.chaoxing.com",
                          f"/entry/page/{page_id}/show",)
         self.raw_html = self._get_html()
@@ -146,7 +146,7 @@ class Get_activity_HTML(fetch):
 
         return key
 
-class Get_activity_sub_domain(fetch):
+class Get_Activity_sub_domain(fetch):
     """用于获取302重定向后指向的Location"""
     def __init__(self, class_id) -> None:
         """
@@ -156,7 +156,7 @@ class Get_activity_sub_domain(fetch):
         """
         self._config = Config()
         cookies = dict(get_cookies(self._config))
-        super().__init__(cookies,activity_sub_domain(),
+        super().__init__(cookies,Activity_sub_domain(),
                          "https://hd.chaoxing.com",
                          f"/hd/activity/{class_id}")
         self.domain = self._get_domain()
@@ -189,10 +189,10 @@ class Get_activity_detial(fetch):
         """
         self._config = Config()
         cookies = dict(get_cookies(self._config))
-        super().__init__(cookies,activity_information(sub_domain),
+        super().__init__(cookies,Activity_information(sub_domain),
                          "https://api.hd.chaoxing.com",
                          "/mh/v3/activity/info",
-                         activity_information_data())
+                         Activity_information_data())
         self.page_id = page_id
         self.website_id = website_id
         self.sub_domain = sub_domain
@@ -212,7 +212,7 @@ class Get_activity_detial(fetch):
         self.session.close()
         return response.json()
 
-class Get_activity_describe(fetch):
+class Get_Activity_describe(fetch):
     """用于获取课程描述信息"""
     def __init__(self, page_id,website_id,sub_domain) -> None:
         """
@@ -224,7 +224,7 @@ class Get_activity_describe(fetch):
         """
         self._config = Config()
         cookies = dict(get_cookies(self._config))
-        super().__init__(cookies,activity_describe(sub_domain),
+        super().__init__(cookies,Activity_describe(sub_domain),
                          "https://hd.chaoxing.com",
                          f"/api/activity/introduction?pageId={page_id}&current_pageId={page_id}&current_websiteId={website_id}&current_wfwfid=")
         self.backend_api+=self.cookies['wfwfid']
@@ -238,7 +238,7 @@ class Get_activity_describe(fetch):
         self.session.close()
         return response.json()["data"]
 
-class Get_activity_css(fetch):
+class Get_Activity_css(fetch):
     """用于获取描述那栏用的的css，非必要不获取\n已经缓存到根目录中了"""
     def __init__(self,sub_domain) -> None:
         """
@@ -248,13 +248,13 @@ class Get_activity_css(fetch):
         """
         self._config = Config()
         cookies = dict(get_cookies(self._config))
-        super().__init__(cookies,activity_css(sub_domain),
+        super().__init__(cookies,Activity_css(sub_domain),
                          "https://pc.chaoxing.com",
                          "/res/css/subscribe/pop.css?v=4")
         self.sub_domain = sub_domain
 
-        self.css = self._Get_activity_css() 
-    def _Get_activity_css(self):
+        self.css = self._Get_Activity_css() 
+    def _Get_Activity_css(self):
         url = self.source_url + self.backend_api
         response = self.session.get(url)
         self.connect_code = response.status_code
@@ -262,15 +262,15 @@ class Get_activity_css(fetch):
         self.session.close()
         return response.text
 
-class Get_activity_type(fetch):
+class Get_Activity_type(fetch):
     def __init__(self,real_name) -> None:
         self._config = Config()
         cookies = dict(get_cookies(self._config))
         super().__init__(cookies,
-                         activity_type(cookies['UID']),
+                         Activity_type(cookies['UID']),
                          "https://hd.chaoxing.com",
                          "/second-classroom/api/result/model?authEnc=",
-                         activity_type_data(cookies['UID'],
+                         Activity_type_data(cookies['UID'],
                          real_name,
                          cookies['wfwfid']))
         self.json = self.get_json()
@@ -284,14 +284,14 @@ class Get_activity_type(fetch):
         rep_json = response.json()
         return rep_json['data']['creditQualifieds']
 
-class Get_activity_record(fetch):
+class Get_Activity_record(fetch):
     def __init__(self) -> None:
         self._config = Config()
         cookies = dict(get_cookies(self._config))
-        super().__init__(cookies,activity_record(cookies['UID']),
+        super().__init__(cookies,Activity_record(cookies['UID']),
                             "https://hd.chaoxing.com",
                             "/second-classroom/api/user/record/paging?authEnc=",
-                            activity_record_data(cookies['UID'],cookies['wfwfid']))
+                            Activity_record_data(cookies['UID'],cookies['wfwfid']))
         self.json = self.get_json()
     
     def get_json(self):
@@ -307,10 +307,10 @@ class Get_activity_btn_name(fetch):
     def __init__(self,page_id,website_id,sub_domain) -> None:
         self._config = Config()
         cookies = dict(get_cookies(self._config))
-        super().__init__(cookies,activity_status(sub_domain),
+        super().__init__(cookies,Activity_status(sub_domain),
                          "https://api.hd.chaoxing.com",
                          "/mh/v3/activity/btns",
-                         activity_status_data())
+                         Activity_status_data())
         self.page_id = page_id
         self.website_id = website_id
         self.sub_domain = sub_domain
@@ -340,7 +340,7 @@ class get_cookies:
         self.session = requests.session()
         self.cipher = AESCipher()
         self.url = "https://passport2.chaoxing.com/fanyalogin"
-        self.headers = dict(account_cookies())
+        self.headers = dict(Account_cookies())
         self.data = {
             "fid": "-1",
             "uname": self.cipher.encrypt(self._config.user_name),
@@ -400,12 +400,12 @@ if __name__ == "__main__":
         print(test.get_info())
         print(test.json)
     elif test_target == 1:
-        test = Get_activity_HTML("5o9skajr",2305690)
+        test = Get_Activity_HTML("5o9skajr",2305690)
         print(test.get_info())
         print(test.raw_html)
         print(test.get("pageId"))
     elif test_target == 2:
-        test = Get_activity_sub_domain(4110881)
+        test = Get_Activity_sub_domain(4110881)
         print(test.get_info())
         print(test.domain)
     elif test_target == 3:
@@ -413,20 +413,20 @@ if __name__ == "__main__":
         print(test.get_info())
         print(test.json)
     elif test_target == 4:
-        test = Get_activity_describe(2305690,950312,"5oy65hti")
+        test = Get_Activity_describe(2305690,950312,"5oy65hti")
         print(test.get_info())
         print(test.describe)
     elif test_target == 5:
-        test = Get_activity_css("5o9skajr")
+        test = Get_Activity_css("5o9skajr")
         print(test.get_info())
     elif test_target == 6:
         test =  get_cookies(Config())
         print(test.cookies)
     elif test_target == 7:
-        test = Get_activity_type('罗嘉瑞')
+        test = Get_Activity_type('罗嘉瑞')
         print(test.json)
     elif test_target == 8:
-        test = Get_activity_record()
+        test = Get_Activity_record()
         print(test.json)
     elif test_target == 9:
         test = Get_activity_btn_name(2327102,954931,"5pdib4r6")

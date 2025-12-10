@@ -55,10 +55,10 @@ class Backend_web:
             
             if self.shared_data.get_status() == "Done":
                 status_code = 200
-            activity_list = self.shared_data.get_data_json()
+            Activity_list = self.shared_data.get_data_json()
 
             response = {"code":status_code,
-                        "data":activity_list,
+                        "data":Activity_list,
                         "session":self.shared_data.get_session()
                         }
             return jsonify(json.dumps(response))

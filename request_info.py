@@ -52,7 +52,7 @@ class Datas:
     def __iter__(self):
         return iter(self._data.items())
 
-class activity_list(Headers):
+class Activity_list(Headers):
     def __init__(self,UID) -> None:
         super().__init__()
         self.Host = "hd.chaoxing.com"
@@ -82,7 +82,7 @@ class activity_list(Headers):
         yield ('Connection',self.Connection)
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
-class activity_sub_domain(Headers):
+class Activity_sub_domain(Headers):
     def __init__(self) -> None:
         super().__init__()
         self.Host = "hd.chaoxing.com"
@@ -104,7 +104,7 @@ class activity_sub_domain(Headers):
         yield ('Referer',self.Referer)
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
-class activity_HTML(Headers):
+class Activity_HTML(Headers):
     def __init__(self,sub_domain) -> None:
         super().__init__()
         self.Host = sub_domain + ".mh.chaoxing.com"
@@ -125,7 +125,7 @@ class activity_HTML(Headers):
         yield ('Referer',self.Referer)
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
-class activity_information(Headers):
+class Activity_information(Headers):
     def __init__(self,sub_domain) -> None:
         super().__init__()
         self.Host = "api.hd.chaoxing.com"
@@ -152,7 +152,7 @@ class activity_information(Headers):
         yield ('Connection',self.Connection)
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
-class activity_describe(Headers):
+class Activity_describe(Headers):
     def __init__(self,sub_domain) -> None:
         super().__init__()
         self.Host = "hd.chaoxing.com"
@@ -175,7 +175,7 @@ class activity_describe(Headers):
         yield ('Referer',self.Referer)
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
-class activity_css(Headers):
+class Activity_css(Headers):
     def __init__(self,sub_domain) -> None:
         super().__init__()
         self.Host = "pc.chaoxing.com"
@@ -196,7 +196,7 @@ class activity_css(Headers):
         yield ('Referer',self.Referer)
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
-class account_cookies(Headers):
+class Account_cookies(Headers):
     def __init__(self) -> None:
         super().__init__()
         self.secchua = "?0"
@@ -209,7 +209,7 @@ class account_cookies(Headers):
         yield ('sec-ch-ua',self.secchua)
         yield ('sec-ch-ua-platform',self.secchuaplatform)
 
-class activity_type(Headers):
+class Activity_type(Headers):
     def __init__(self,UID) -> None:
         super().__init__()
         self.Host = 'hd.chaoxing.com'
@@ -238,7 +238,7 @@ class activity_type(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
         yield ('Referer',self.Referer)
 
-class activity_record(Headers):
+class Activity_record(Headers):
     def __init__(self,UID) -> None:
         super().__init__()
         self.Host = 'hd.chaoxing.com'
@@ -268,7 +268,7 @@ class activity_record(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
         yield ('Referer',self.Referer)
 
-class activity_status(Headers):
+class Activity_status(Headers):
     def __init__(self,sub_domain) -> None:
         super().__init__()
         self.Host = 'api.hd.chaoxing.com'
@@ -296,7 +296,7 @@ class activity_status(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
 
-class activity_list_data(Datas):
+class Activity_list_data(Datas):
     def __init__(self,wfwid) -> None:
         super().__init__()
         self._data = {"pageNum": 1,
@@ -321,7 +321,7 @@ class activity_list_data(Datas):
                     "orderField": "DEFAULT"
                     }
 
-class activity_information_data(Datas):
+class Activity_information_data(Datas):
     def __init__(self) -> None:
         super().__init__()
         self._data = {
@@ -345,7 +345,7 @@ class activity_information_data(Datas):
         else:
             raise NameError("Key Error",k)
         
-class activity_status_data(Datas):
+class Activity_status_data(Datas):
     def __init__(self) -> None:
         super().__init__()
         self._data = {
@@ -370,7 +370,7 @@ class activity_status_data(Datas):
         else:
             raise NameError("Key Error",k)
         
-class activity_type_data(Datas):
+class Activity_type_data(Datas):
     def __init__(self,UID,realName,wfwfid) -> None:
         super().__init__()
         self._data = f"uid={UID}&realName={quote(realName)}&fid={wfwfid}&inspectionPlanId=159&schoolYear=&orgConfigId=91"
@@ -388,7 +388,7 @@ class activity_type_data(Datas):
     def __str__(self) -> str:
         return self.get_data()
 
-class activity_record_data(Datas):
+class Activity_record_data(Datas):
     def __init__(self,UID,wfwfid) -> None:
         super().__init__()
         self._data = f"uid={UID}&fid={wfwfid}&inspectionPlanId=159&credit=&timeOrder=DESC&pageNum=1&pageSize=10000&schoolYear=&orgConfigId=91"
