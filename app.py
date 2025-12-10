@@ -11,7 +11,7 @@ class Backend_web:
     """后端服务器类"""
     def __init__(self,shared_data) -> None:
         self.app = Flask(__name__)
-        self._register_routes()
+        self._register_routes() # 注册路由
         self.shared_data = shared_data
     def cors_headers(self,response) ->dict:
         response.headers['Access-Control-Allow-Origin'] = "*"
@@ -28,11 +28,13 @@ class Backend_web:
 
         @self.app.route('/')
         def home():
+            # TODO:返回主页，前端还未完成
             return "Hello?"
 
 
         @self.app.route('/status')
         def ret_status():
+            """发送当前状态"""
             if self.shared_data.get_status() == "Done":
                 status = {"status":"complete",
                           "complete":True,
@@ -48,7 +50,9 @@ class Backend_web:
 
         @self.app.route('/data', methods=['GET', 'OPTIONS'])
         def data():
+            """发送结果"""
             status_code = 202
+            # JS fetch跨域处理
             if request.method == "OPTIONS":
                 headers =  self.cors_headers(make_response())
                 return headers
@@ -61,10 +65,12 @@ class Backend_web:
                         "data":Activity_list,
                         "session":self.shared_data.get_session()
                         }
+            # 202-进程还未结束，200可以使用
             return jsonify(json.dumps(response))
         
         @self.app.route('/service',methods=['POST'])
         def service():
+            """接收需要执行的任务"""
             code = 500
             data = request.get_data(as_text=True)
             json_text = json.loads(data)
@@ -93,6 +99,7 @@ class Backend_web:
 
 if __name__ == "__main__":
     running_code = 1
+    # 单线程模式
     shared_data = SharedData()
 
     activity_exam = Chaoxing_activity(shared_data,Config())

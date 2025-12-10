@@ -10,6 +10,7 @@ import json
 ################################
 
 class Headers:
+    """请求头父类"""
     def __init__(self) -> None:
         self.Accept = "*/*"
         self.AcceptLanguage = "zh-CN,zh-Hans;q=0.9"
@@ -23,6 +24,7 @@ class Headers:
         yield ('User-Agent',self.UserAgent)
 
 class Datas:
+    """请求体父类"""
     def __init__(self) -> None:
         self._data = {}
         
@@ -53,6 +55,7 @@ class Datas:
         return iter(self._data.items())
 
 class Activity_list(Headers):
+    """用于获取活动列表的"""
     def __init__(self,UID) -> None:
         super().__init__()
         self.Host = "hd.chaoxing.com"
@@ -83,6 +86,7 @@ class Activity_list(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
 class Activity_sub_domain(Headers):
+    """用于获取302重定向后最后一级的域名"""
     def __init__(self) -> None:
         super().__init__()
         self.Host = "hd.chaoxing.com"
@@ -105,6 +109,7 @@ class Activity_sub_domain(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
 class Activity_HTML(Headers):
+    """用于获取活动html"""
     def __init__(self,sub_domain) -> None:
         super().__init__()
         self.Host = sub_domain + ".mh.chaoxing.com"
@@ -126,6 +131,7 @@ class Activity_HTML(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
 class Activity_information(Headers):
+    """用于获取活动详细信息"""
     def __init__(self,sub_domain) -> None:
         super().__init__()
         self.Host = "api.hd.chaoxing.com"
@@ -153,6 +159,7 @@ class Activity_information(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
 class Activity_describe(Headers):
+    """用于获取活动描述"""
     def __init__(self,sub_domain) -> None:
         super().__init__()
         self.Host = "hd.chaoxing.com"
@@ -176,6 +183,7 @@ class Activity_describe(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
 class Activity_css(Headers):
+    """用于获取页面css"""
     def __init__(self,sub_domain) -> None:
         super().__init__()
         self.Host = "pc.chaoxing.com"
@@ -197,6 +205,7 @@ class Activity_css(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
 class Account_cookies(Headers):
+    """用于获取账号cookies(电脑版)"""
     def __init__(self) -> None:
         super().__init__()
         self.secchua = "?0"
@@ -210,6 +219,7 @@ class Account_cookies(Headers):
         yield ('sec-ch-ua-platform',self.secchuaplatform)
 
 class Activity_type(Headers):
+    """用于获取活动有哪些分类"""
     def __init__(self,UID) -> None:
         super().__init__()
         self.Host = 'hd.chaoxing.com'
@@ -239,6 +249,7 @@ class Activity_type(Headers):
         yield ('Referer',self.Referer)
 
 class Activity_record(Headers):
+    """用于获取参与过的活动记录"""
     def __init__(self,UID) -> None:
         super().__init__()
         self.Host = 'hd.chaoxing.com'
@@ -269,6 +280,7 @@ class Activity_record(Headers):
         yield ('Referer',self.Referer)
 
 class Activity_status(Headers):
+    """用于获取按钮参数"""
     def __init__(self,sub_domain) -> None:
         super().__init__()
         self.Host = 'api.hd.chaoxing.com'
@@ -296,7 +308,9 @@ class Activity_status(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
 
 
+
 class Activity_list_data(Datas):
+    """用于获取活动列表的"""
     def __init__(self,wfwid) -> None:
         super().__init__()
         self._data = {"pageNum": 1,
@@ -322,6 +336,7 @@ class Activity_list_data(Datas):
                     }
 
 class Activity_information_data(Datas):
+    """用于获取302重定向后最后一级的域名"""
     def __init__(self) -> None:
         super().__init__()
         self._data = {
@@ -346,6 +361,7 @@ class Activity_information_data(Datas):
             raise NameError("Key Error",k)
         
 class Activity_status_data(Datas):
+    """用于获取按钮参数"""
     def __init__(self) -> None:
         super().__init__()
         self._data = {
@@ -371,6 +387,7 @@ class Activity_status_data(Datas):
             raise NameError("Key Error",k)
         
 class Activity_type_data(Datas):
+    """用于获取活动有哪些分类"""
     def __init__(self,UID,realName,wfwfid) -> None:
         super().__init__()
         self._data = f"uid={UID}&realName={quote(realName)}&fid={wfwfid}&inspectionPlanId=159&schoolYear=&orgConfigId=91"
@@ -389,6 +406,7 @@ class Activity_type_data(Datas):
         return self.get_data()
 
 class Activity_record_data(Datas):
+    """用于获取参与过的活动记录"""
     def __init__(self,UID,wfwfid) -> None:
         super().__init__()
         self._data = f"uid={UID}&fid={wfwfid}&inspectionPlanId=159&credit=&timeOrder=DESC&pageNum=1&pageSize=10000&schoolYear=&orgConfigId=91"

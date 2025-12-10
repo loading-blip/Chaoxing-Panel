@@ -19,15 +19,15 @@ class fetch:
     所有请求的父类，封装了点对超星客制化的功能
     """
     # HACK: 减少传参内容
-    def __init__(self,cookies,headers:Headers,source_url:str,backend_api:str,datas:Datas=Datas()) -> None:
+    def __init__(self,cookies:dict,headers:Headers,source_url:str,backend_api:str,datas:Datas=Datas()) -> None:
         """
         父类请求函数
         Args:
-            headers_id(str): 头部请求记录文件，当前版本data数据也写进header记录中了
+            cookies(dict): dict格式的cookies
+            headers(Headers): 请求头记录类
             source_url(str): 请求域名url，如：`https://example.com`
             backend_api(str): 请求接口路径，如：`/api/xxx`
-            datas_id(int): 需要加载的data类
-            sub_domain(str): 此请求需要的sub_domain
+            datas(Datas): 可选，请求体记录类
         """
         self.source_url = source_url
         self.backend_api = backend_api
@@ -263,7 +263,15 @@ class Get_activity_css(fetch):
         return response.text
 
 class Get_activity_type(fetch):
-    def __init__(self,real_name) -> None:
+    """用户获取活动有哪些类型"""
+    def __init__(self,real_name:str) -> None:
+        """
+        获取活动有哪些类型
+        Args:
+            real_name(str): 你的真名
+        Attributes:
+            json(dict): 返回的值
+        """
         self._config = Config()
         cookies = dict(get_cookies(self._config))
         super().__init__(cookies,
@@ -286,6 +294,11 @@ class Get_activity_type(fetch):
 
 class Get_activity_record(fetch):
     def __init__(self) -> None:
+        """
+        获取参与过的课程记录
+        Attributes:
+            json(dict): 返回的值
+        """
         self._config = Config()
         cookies = dict(get_cookies(self._config))
         super().__init__(cookies,Activity_record(cookies['UID']),
@@ -304,7 +317,17 @@ class Get_activity_record(fetch):
         return rep_json['data']['records']
 
 class Get_activity_btn_name(fetch):
-    def __init__(self,page_id,website_id,sub_domain) -> None:
+    """
+    获取报名按钮名字
+        Args:
+            page_id(int): 课程列表中的pageId
+            website_id(int): 课程列表中的websiteId
+            sub_domain(str): 此请求需要的sub_domain
+        Attributes:
+            json(dict): 返回的原始数据
+            btn_name: 报名按钮名称
+        """
+    def __init__(self,page_id:int,website_id:int,sub_domain:str) -> None:
         self._config = Config()
         cookies = dict(get_cookies(self._config))
         super().__init__(cookies,Activity_status(sub_domain),
@@ -317,6 +340,7 @@ class Get_activity_btn_name(fetch):
         self.json = self._get_json()
         # HACK: 在这新增容错机制
         self.btn_name = self.json['data']['results'][0]['fields'][1]['value']
+        #TODO:存储报名链接
     def _get_json(self):
         url = self.source_url + self.backend_api
         self.datas.set_value("pageId",self.page_id)

@@ -100,7 +100,7 @@ class HTMLTextExtractor(HTMLParser):
 
 class Activity:
     """
-    第二课堂活动列表，将json数据处理，提供当前课程报名状态
+    单个第二课堂活动，将json数据处理，提供当前课程报名状态
     """
 
     @overload
@@ -117,10 +117,25 @@ class Activity:
 
     def __init__(self,raw_json:Dict[str,Any],second_raw_json:Dict[str,Any]={},config:Config=Config()) -> None:
         """
-        不传入值则会创建一个Example，只传入raw_json会自动获取second_raw_json
+        运行环境需要raw_json与config，其他重载为测试环境所需
         Args:
             raw_json(Dict[str,Any], optional): 爬取到的单个课程json
             second_raw_json(Dict[str,Any], optional): 爬取到的此课程描述
+            config(Config): 配置文件实例，需要关键字传参
+        Attributes:
+            id(int): 课程ID
+            name(str): 课程名称
+            address(str): 活动地址
+            friendly_class_name(str): 课程名称(前10字)
+            start_time(int timestamp): 报名开始时间
+            end_time(int timestamp): 报名结束时间
+            class_start_time(int timestamp): 课程开始时间
+            class_end_time(int timestamp): 课程结束时间
+            is_registered(bool): 是否已经报名
+            is_register_link(str): 报名链接
+            friendly_class_name(str): 地址名称(前10字)
+            maxium_peoples(int): 最高报名人数
+            current_people(int): 当前报名人数
         """
         self.sub_domain = Get_activity_sub_domain(raw_json["id"]).domain
         if not second_raw_json:
@@ -129,9 +144,9 @@ class Activity:
         else:
             second_raw_json = second_raw_json["data"]["results"]
         
+        # 处理课程参数
         self._config = config
         self.name = raw_json["name"]
-        self.start_time,self.end_time = self.format_date(self.get_time_in_json(second_raw_json))
         self.class_start_time = raw_json["startTime"] / 1000
         self.class_end_time = raw_json["endTime"] / 1000
         self.id = raw_json["id"]
@@ -140,15 +155,16 @@ class Activity:
         self.address = raw_json["detailAddress"] or "线上"
         self.maxium_people = raw_json["personLimit"]
         self.current_people = raw_json["signedUpNum"]
-        self.c_mgr = Colorful()
-        self.belong_group = ["信息工程学院","8号楼","线上"]
         self.organisers = raw_json["organisers"]
+        self.start_time,self.end_time = self.format_date(self.get_time_in_json(second_raw_json))
 
-        # self.wfwfid = Get_activity_HTML(self.sub_domain,raw_json["pageId"])
-        self.Activity_describe = Get_activity_describe(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
+        self.belong_group = ["信息工程学院","8号楼","线上"]
+
+        self.c_mgr = Colorful()
+        self.activity_describe = Get_activity_describe(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
         self.activity_btn_name = Get_activity_btn_name(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
     
-        self.describe = self.Activity_describe.describe
+        self.describe = self.activity_describe.describe
         self.btn_name = self.activity_btn_name.btn_name
         self.friendly_class_name = self.name
         self.friendly_address_name = self.address
@@ -432,6 +448,7 @@ class Chaoxing_activity:
         return table
 
 class Chaoxing_transcript:
+    """获取账号二课成绩单"""
     def __init__(self,shared_data:SharedData) -> None:
         self.real_name = ""
         self.max_score:float = 0.0
@@ -454,11 +471,13 @@ class Chaoxing_transcript:
         self.shared_data.set_data_json(self.get_pack())
 
     def get_record(self):
+        """获取记录"""
         self._act_record = Get_activity_record()
         self.real_name = self._act_record.json[0]['userName']
         return self._act_record.json
     
     def get_type(self):
+        """获取课程有哪些分类"""
         if not self.real_name:
             self.act_record = self.get_record()
         self._act_type = Get_activity_type(self.real_name)
