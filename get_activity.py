@@ -203,6 +203,7 @@ class get_activity_detial(fetch):
         self.datas.set_value("websiteId",self.website_id)
         self.datas.set_value("wfwfid",self.cookies['wfwfid'])
         self.datas.set_value("vc3",unquote(self.cookies['vc3']))
+        self.datas.set_value("uid",self.cookies['UID'])
         self.datas.set_value("_d",self.cookies['sso_t'])
         response = self.session.post(url,
                      json=dict(self.datas))
@@ -302,6 +303,36 @@ class get_activity_record(fetch):
         rep_json = response.json()
         return rep_json['data']['records']
 
+class get_activity_btn_name(fetch):
+    def __init__(self,page_id,website_id,sub_domain) -> None:
+        self._config = Config()
+        cookies = dict(get_cookies(self._config))
+        super().__init__(cookies,activity_status(sub_domain),
+                         "https://api.hd.chaoxing.com",
+                         "/mh/v3/activity/btns",
+                         activity_status_data())
+        self.page_id = page_id
+        self.website_id = website_id
+        self.sub_domain = sub_domain
+        self.json = self._get_json()
+        # HACK: 在这新增容错机制
+        self.btn_name = self.json['data']['results'][0]['fields'][1]['value']
+    def _get_json(self):
+        url = self.source_url + self.backend_api
+        self.datas.set_value("pageId",self.page_id)
+        self.datas.set_value("websiteId",self.website_id)
+        self.datas.set_value("wfwfid",self.cookies['wfwfid'])
+        self.datas.set_value("vc3",unquote(self.cookies['vc3']))
+        self.datas.set_value("uid",self.cookies['UID'])
+        self.datas.set_value("_d",self.cookies['sso_t'])
+        response = self.session.post(url,
+                     json=dict(self.datas))
+        self.connect_code = response.status_code
+        self.response_text = response.text
+        self.session.close()
+        return response.json()
+    
+
 class get_cookies:
     # 获取cookies的类需要独立父类
     def __init__(self,config_exam:Config) -> None:
@@ -363,7 +394,7 @@ class get_cookies:
         
 if __name__ == "__main__":
     # For test. qwq
-    test_target = 3
+    test_target = 9
     if test_target == 0:
         test = get_activity()
         print(test.get_info())
@@ -378,7 +409,7 @@ if __name__ == "__main__":
         print(test.get_info())
         print(test.domain)
     elif test_target == 3:
-        test = get_activity_detial(2314590,952517,"5oy65hti")
+        test = get_activity_detial(2327102,954931,"5pdib4r6")
         print(test.get_info())
         print(test.json)
     elif test_target == 4:
@@ -397,3 +428,8 @@ if __name__ == "__main__":
     elif test_target == 8:
         test = get_activity_record()
         print(test.json)
+    elif test_target == 9:
+        test = get_activity_btn_name(2327102,954931,"5pdib4r6")
+        print(test.json)
+        print(test.btn_name)
+        print(test.get_info())

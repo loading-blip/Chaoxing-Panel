@@ -5,6 +5,7 @@ import threading
 
 from flask import Flask,make_response,request,jsonify,abort
 from activity import Chaoxing_activity,SharedData,Chaoxing_transcript
+from config import Config
 
 class Backend_web:
     """后端服务器类"""
@@ -94,7 +95,7 @@ if __name__ == "__main__":
     running_code = 1
     shared_data = SharedData()
 
-    activity_exam = Chaoxing_activity(shared_data)
+    activity_exam = Chaoxing_activity(shared_data,Config())
     activity_Transcript = Chaoxing_transcript(shared_data)
     if running_code:
         backend_exam = Backend_web(shared_data)

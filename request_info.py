@@ -268,6 +268,34 @@ class activity_record(Headers):
         yield ('Sec-Fetch-Dest',self.SecFetchDest)
         yield ('Referer',self.Referer)
 
+class activity_status(Headers):
+    def __init__(self,sub_domain) -> None:
+        super().__init__()
+        self.Host = 'api.hd.chaoxing.com'
+        self.SecFetchSite = 'same-site'
+        self.SecFetchMode = 'cors'
+        self.ContentType = 'application/json;charset=UTF-8'
+        self.Origin = f'https://{sub_domain}.mh.chaoxing.com'
+        self.Referer = f'https://{sub_domain}.mh.chaoxing.com/'
+        self.ContentLength = '419'
+        self.Connection = 'keep-alive'
+        self.SecFetchDest = 'empty'
+
+    @override
+    def __iter__(self):
+        for item in super().__iter__():
+            yield item
+        yield ('Host',self.Host)
+        yield ('Sec-Fetch-Site',self.SecFetchSite)
+        yield ('Sec-Fetch-Mode',self.SecFetchMode)
+        yield ('Content-Type',self.ContentType)
+        yield ('Origin',self.Origin)
+        yield ('Referer',self.Referer)
+        yield ('Content-Length',self.ContentLength)
+        yield ('Connection',self.Connection)
+        yield ('Sec-Fetch-Dest',self.SecFetchDest)
+
+
 class activity_list_data(Datas):
     def __init__(self,wfwid) -> None:
         super().__init__()
@@ -300,7 +328,7 @@ class activity_information_data(Datas):
             "preParams": None,
             "pageSize": None,
             "pageId": 0,  # FILL
-            "uid": "242075141",
+            "uid": "", # FILL
             "page": 1,
             "classifies": [],
             "isMobile": True,
@@ -308,6 +336,31 @@ class activity_information_data(Datas):
             "websiteId": 0, # FILL
             "vc3": "", # FILL
             "_d": "" # FILL
+        }
+    
+    @override
+    def set_value(self,k,v):
+        if k in self._data.keys():
+            self._data[k] = v
+        else:
+            raise NameError("Key Error",k)
+        
+class activity_status_data(Datas):
+    def __init__(self) -> None:
+        super().__init__()
+        self._data = {
+            "preParams": "scoreEngineInvitationCode=",
+            "pageSize": None,
+            "pageId": 0, # FILL
+            "uid": "", # FILL
+            "page": 1,
+            "classifies": [],
+            "isMobile": True,
+            "wfwfid": 0, # FILL
+            "websiteId": 0, # FILL
+            "vc3": "", # FILL
+            "_d": "", # FILL
+            "ufid": "152200"
         }
     
     @override

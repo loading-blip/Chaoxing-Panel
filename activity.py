@@ -13,6 +13,7 @@ import threading
 from html.parser import HTMLParser
 from get_activity import *
 from u033_tools import colored_opt,Terminal_support
+from config import Config
 
 ###########################
 #   此文件内存放超星功能体
@@ -106,10 +107,15 @@ class Activity_information_constructer:
     def __init__(self,raw_json:Dict[str,Any]) -> None:...
 
     @overload
+    def __init__(self,raw_json:Dict[str,Any],*,config:Config) -> None:...
+
+    @overload
     def __init__(self,raw_json:Dict[str,Any],second_raw_json:Dict[str,Any]) -> None:...
 
+    @overload
+    def __init__(self,raw_json:Dict[str,Any],second_raw_json:Dict[str,Any],*,config:Config) -> None:...
 
-    def __init__(self,raw_json:Dict[str,Any],second_raw_json:Dict[str,Any]={}) -> None:
+    def __init__(self,raw_json:Dict[str,Any],second_raw_json:Dict[str,Any]={},config:Config=Config()) -> None:
         """
         不传入值则会创建一个Example，只传入raw_json会自动获取second_raw_json
         Args:
@@ -123,13 +129,15 @@ class Activity_information_constructer:
         else:
             second_raw_json = second_raw_json["data"]["results"]
         
+        self._config = config
         self.name = raw_json["name"]
         self.start_time,self.end_time = self.format_date(self.get_time_in_json(second_raw_json))
         self.class_start_time = raw_json["startTime"] / 1000
         self.class_end_time = raw_json["endTime"] / 1000
         self.name = raw_json["name"]
         self.id = raw_json["id"]
-        # self.status = {"未开始":0,"报名中":1,"即将开始":2,"进行中":3,"已结束":4}[raw_json["signUpStatusDescribe"]]
+        self.is_registered = False
+        self.is_register_link = ""
         self.address = raw_json["detailAddress"] or "线上"
         self.maxium_people = raw_json["personLimit"]
         self.current_people = raw_json["signedUpNum"]
@@ -139,7 +147,10 @@ class Activity_information_constructer:
 
         # self.wfwfid = get_activity_HTML(self.sub_domain,raw_json["pageId"])
         self.activity_describe = get_activity_describe(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
+        self.activity_btn_name = get_activity_btn_name(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
+    
         self.describe = self.activity_describe.describe
+        self.btn_name = self.activity_btn_name.btn_name
         self.friendly_class_name = self.name
         self.friendly_address_name = self.address
         if len(self.friendly_class_name) >= 10:
@@ -235,22 +246,33 @@ class Activity_information_constructer:
         status_dict = {"time":"great_chance", # 已结束(closed)，未开始(not_started),可以报名(great_chance)
                 "belong":False, # 是否符合报名资格
                 "reg":"", # 人数已满(full)，人数没有过半(free)，人数过半(busy)，没有上限(infinite)
+                "state":False # 当前账号报名此活动的状态
                 } 
-        if not self.start_time:                                   status_dict["time"] = "great_chance"  #没有时间默认可抢
-        elif time.time() > self.end_time:                         status_dict["time"] = "closed"
-        elif time.time() < self.start_time:                       status_dict["time"] = "not_started"
+        if  (self.btn_name in self._config.btn_can_reg_names) or not self.start_time:
+            status_dict["time"] = "great_chance"  #没有时间默认可抢
+        elif (self.btn_name in self._config.btn_cannot_reg_names) or (time.time() > self.end_time):
+            status_dict["time"] = "closed"
+        elif time.time() < self.start_time:
+            status_dict["time"] = "not_started"
 
-        for i in self.belong_group:
-            if i in self.organisers: 
-                status_dict["belong"] = True
-                break
+        # 检测是否在参与范围内
+        if self.btn_name in self._config.btn_cannot_reg_names:
+            status_dict["belong"] = True
+        else:
+            for i in self.belong_group:
+                if i in self.organisers: 
+                    status_dict["belong"] = True
+                    break
         
+        if self.btn_name in self._config.btn_reg_names:
+            status_dict['state'] = True
+
         if not self.maxium_people:                              status_dict["reg"] = "infinite"
         elif self.maxium_people == self.current_people:         status_dict["reg"] = "full"
         elif self.current_people / self.maxium_people <= 0.5:   status_dict["reg"] = "busy"
         else:                                                   status_dict["reg"] = "free"
         return status_dict
-    def generate_HTML(self,document:str,path="tmp/") -> None:
+    def generate_HTML(self,document:str) -> None:
         raw_head = """<!DOCTYPE html>
                     <html lang="en">
                     <head>
@@ -277,10 +299,11 @@ class Activity_information_constructer:
         
 class Chaoxing_activity:
     """第二课堂数据获取类"""
-    def __init__(self,shared_data):
+    def __init__(self,shared_data,config:Config):
         self.raw_data =[]
         self.data:List[Dict[str,str]] = []
         self.shared_data = shared_data
+        self._config = config
 
     def run_request(self):
         self.raw_data = self.get_data()
@@ -313,7 +336,7 @@ class Chaoxing_activity:
         for activity in activity_json['data']['records']:
             self.shared_data.set_current_work(f'正在获取"{activity["name"]}"的详细信息...')
             self.shared_data.acc_current_quantity()
-            activity_list.append(Activity_information_constructer(activity))
+            activity_list.append(Activity_information_constructer(activity,config=self._config))
             process_bar.update(1)
             # time.sleep(1)
         process_bar.close()
@@ -339,6 +362,7 @@ class Chaoxing_activity:
             if status["time"] == "closed" or not status["belong"]:  report = "unavailable"
             elif status["time"] == "not_started":                   report = "not_started"
             elif status["reg"] == "full":                           report = "full"
+            elif status["state"]:                                   report = "regd"
             elif status["reg"] == "busy":                           report = "busy"
             else:                                                   report = "great_chance"
 
@@ -452,7 +476,7 @@ class Chaoxing_transcript:
         }
 
 if __name__ == "__main__":
-    test = Chaoxing_transcript(SharedData())
-    test.run_request()
-    print(test.get_pack())
-    
+    # test = Chaoxing_transcript(SharedData())
+    test = Activity_information_constructer(json.load(open('test_resources/dier-1.json','r',encoding='utf8')),config=Config())
+    print(test.get_status())
+    print(test.btn_name)
