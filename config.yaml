@@ -1,0 +1,24 @@
+Config:
+  # 配置文件版本，勿动
+  version: 0.1
+
+Account:
+  # 是否使用cookies登录
+  use_cookies: True
+  # cookies文件夹位置
+  cookies_file_path: "clue/cookies_new.txt"
+  # 用户名/手机号
+  username: ""
+  # 密码
+  password: ""
+  
+Mapping_table:
+  # 按顺序映射
+  button_name:
+    - ["去签到","去评价"] # 已报名槽位
+    - ["报名参与"] # 可报名槽位
+    - ["不在参与范围内"] # 不可报名槽位
+    - ["名额已满"] # 名额满员槽位
+    - ["报名已结束"] # 报名结束槽位
+  
+# Device:
