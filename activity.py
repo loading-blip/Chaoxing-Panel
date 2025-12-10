@@ -122,7 +122,7 @@ class Activity:
             raw_json(Dict[str,Any], optional): 爬取到的单个课程json
             second_raw_json(Dict[str,Any], optional): 爬取到的此课程描述
         """
-        self.sub_domain = Get_Activity_sub_domain(raw_json["id"]).domain
+        self.sub_domain = Get_activity_sub_domain(raw_json["id"]).domain
         if not second_raw_json:
             self.activity_detial = Get_activity_detial(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
             second_raw_json = self.activity_detial.json["data"]["results"]
@@ -144,8 +144,8 @@ class Activity:
         self.belong_group = ["信息工程学院","8号楼","线上"]
         self.organisers = raw_json["organisers"]
 
-        # self.wfwfid = Get_Activity_HTML(self.sub_domain,raw_json["pageId"])
-        self.Activity_describe = Get_Activity_describe(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
+        # self.wfwfid = Get_activity_HTML(self.sub_domain,raw_json["pageId"])
+        self.Activity_describe = Get_activity_describe(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
         self.activity_btn_name = Get_activity_btn_name(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
     
         self.describe = self.Activity_describe.describe
@@ -439,8 +439,8 @@ class Chaoxing_transcript:
         self.act_record = []
         self.shared_data = shared_data
 
-        self._act_type:Get_Activity_type
-        self._act_record:Get_Activity_record
+        self._act_type:Get_activity_type
+        self._act_record:Get_activity_record
 
     def run_request(self):
         self.shared_data.set_current_work("正在获取参与过的项目....")
@@ -454,14 +454,14 @@ class Chaoxing_transcript:
         self.shared_data.set_data_json(self.get_pack())
 
     def get_record(self):
-        self._act_record = Get_Activity_record()
+        self._act_record = Get_activity_record()
         self.real_name = self._act_record.json[0]['userName']
         return self._act_record.json
     
     def get_type(self):
         if not self.real_name:
             self.act_record = self.get_record()
-        self._act_type = Get_Activity_type(self.real_name)
+        self._act_type = Get_activity_type(self.real_name)
         for type in self._act_type.json:
             self.max_score += type['minScore'] if type['minScore'] else 0.0
         return self._act_type.json
