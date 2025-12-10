@@ -12,7 +12,7 @@ import threading
 
 from html.parser import HTMLParser
 from get_activity import *
-from u033_tools import colored_opt,Terminal_support
+from u033_tools import Colorful,Terminal_support
 from config import Config
 
 ###########################
@@ -140,7 +140,7 @@ class Activity:
         self.address = raw_json["detailAddress"] or "线上"
         self.maxium_people = raw_json["personLimit"]
         self.current_people = raw_json["signedUpNum"]
-        self.c_mgr = colored_opt()
+        self.c_mgr = Colorful()
         self.belong_group = ["信息工程学院","8号楼","线上"]
         self.organisers = raw_json["organisers"]
 
@@ -381,7 +381,7 @@ class Chaoxing_activity:
     def __str__(self):
         # HACK: 代码重复，下次重构解决
         current_path = os.getcwd()
-        c_mgr = colored_opt()
+        c_mgr = Colorful()
 
         opt_list = [[f"{c_mgr.light_blue}名称{c_mgr.default}",
                     f"{c_mgr.light_blue}人数{c_mgr.default}",

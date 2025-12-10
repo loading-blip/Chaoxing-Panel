@@ -1,4 +1,4 @@
-class colored_opt:
+class Colorful:
     def __init__(self):
         """
         颜色库

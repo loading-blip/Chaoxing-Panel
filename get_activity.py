@@ -1,6 +1,6 @@
 import requests
 from request_info import Datas, Headers
-from u033_tools import colored_opt
+from u033_tools import Colorful
 import re
 from request_info import *
 from cipher import AESCipher
@@ -34,7 +34,7 @@ class fetch:
         self.connect_code = -1
         self.response_text = ""
         self.cookies = cookies
-        self.c_mgr = colored_opt()
+        self.c_mgr = Colorful()
         self.headers = headers
         self.datas = datas
         self.session = requests.session()
