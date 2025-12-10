@@ -69,9 +69,9 @@ class Backend_web:
             data = request.get_data(as_text=True)
             json_text = json.loads(data)
             need_service = json_text['use']
-            if need_service == "get_activity":
+            if need_service == "Get_activity":
                 self.shared_data.reload()
-                self.shared_data.set_session("get_activity")
+                self.shared_data.set_session("Get_activity")
                 data_threading = threading.Thread(target=activity_exam.run_request)
                 data_threading.start()
                 code = 200

@@ -85,7 +85,7 @@ class fetch:
 
         return "\n".join(opt)
 
-class get_activity(fetch):
+class Get_activity(fetch):
     """
     用于获取当前课程列表
     """
@@ -97,9 +97,9 @@ class get_activity(fetch):
                          '/hd/api/activity/list/participate',
                          activity_list_data(cookies['wfwfid']))
         self.datas_string = "data=" + self.datas.get_data('utf8') + "&pageNum=1&pageSize=10"
-        self.json = self.get_activity_json()
+        self.json = self.Get_activity_json()
 
-    def get_activity_json(self) -> str:
+    def Get_activity_json(self) -> str:
         """
         获取当前课程列表
         """
@@ -113,7 +113,7 @@ class get_activity(fetch):
         self.session.close()
         return self.response_text
 
-class get_activity_HTML(fetch):
+class Get_activity_HTML(fetch):
     """
     用于获取当前课程HTML结构，但主要功能为获取wfwf_Id
     """
@@ -146,7 +146,7 @@ class get_activity_HTML(fetch):
 
         return key
 
-class get_302_Location(fetch):
+class Get_activity_sub_domain(fetch):
     """用于获取302重定向后指向的Location"""
     def __init__(self, class_id) -> None:
         """
@@ -177,7 +177,7 @@ class get_302_Location(fetch):
         else:
             raise BaseException("NetworkError","Cannot get subdomain")
 
-class get_activity_detial(fetch):
+class Get_activity_detial(fetch):
     """用于获取课程详细信息"""
     def __init__(self,page_id,website_id,sub_domain) -> None:
         """
@@ -212,7 +212,7 @@ class get_activity_detial(fetch):
         self.session.close()
         return response.json()
 
-class get_activity_describe(fetch):
+class Get_activity_describe(fetch):
     """用于获取课程描述信息"""
     def __init__(self, page_id,website_id,sub_domain) -> None:
         """
@@ -238,7 +238,7 @@ class get_activity_describe(fetch):
         self.session.close()
         return response.json()["data"]
 
-class get_css(fetch):
+class Get_activity_css(fetch):
     """用于获取描述那栏用的的css，非必要不获取\n已经缓存到根目录中了"""
     def __init__(self,sub_domain) -> None:
         """
@@ -253,8 +253,8 @@ class get_css(fetch):
                          "/res/css/subscribe/pop.css?v=4")
         self.sub_domain = sub_domain
 
-        self.css = self._get_css() 
-    def _get_css(self):
+        self.css = self._Get_activity_css() 
+    def _Get_activity_css(self):
         url = self.source_url + self.backend_api
         response = self.session.get(url)
         self.connect_code = response.status_code
@@ -262,7 +262,7 @@ class get_css(fetch):
         self.session.close()
         return response.text
 
-class get_activity_type(fetch):
+class Get_activity_type(fetch):
     def __init__(self,real_name) -> None:
         self._config = Config()
         cookies = dict(get_cookies(self._config))
@@ -284,7 +284,7 @@ class get_activity_type(fetch):
         rep_json = response.json()
         return rep_json['data']['creditQualifieds']
 
-class get_activity_record(fetch):
+class Get_activity_record(fetch):
     def __init__(self) -> None:
         self._config = Config()
         cookies = dict(get_cookies(self._config))
@@ -303,7 +303,7 @@ class get_activity_record(fetch):
         rep_json = response.json()
         return rep_json['data']['records']
 
-class get_activity_btn_name(fetch):
+class Get_activity_btn_name(fetch):
     def __init__(self,page_id,website_id,sub_domain) -> None:
         self._config = Config()
         cookies = dict(get_cookies(self._config))
@@ -396,40 +396,40 @@ if __name__ == "__main__":
     # For test. qwq
     test_target = 9
     if test_target == 0:
-        test = get_activity()
+        test = Get_activity()
         print(test.get_info())
         print(test.json)
     elif test_target == 1:
-        test = get_activity_HTML("5o9skajr",2305690)
+        test = Get_activity_HTML("5o9skajr",2305690)
         print(test.get_info())
         print(test.raw_html)
         print(test.get("pageId"))
     elif test_target == 2:
-        test = get_302_Location(4110881)
+        test = Get_activity_sub_domain(4110881)
         print(test.get_info())
         print(test.domain)
     elif test_target == 3:
-        test = get_activity_detial(2327102,954931,"5pdib4r6")
+        test = Get_activity_detial(2327102,954931,"5pdib4r6")
         print(test.get_info())
         print(test.json)
     elif test_target == 4:
-        test = get_activity_describe(2305690,950312,"5oy65hti")
+        test = Get_activity_describe(2305690,950312,"5oy65hti")
         print(test.get_info())
         print(test.describe)
     elif test_target == 5:
-        test = get_css("5o9skajr")
+        test = Get_activity_css("5o9skajr")
         print(test.get_info())
     elif test_target == 6:
         test =  get_cookies(Config())
         print(test.cookies)
     elif test_target == 7:
-        test = get_activity_type('罗嘉瑞')
+        test = Get_activity_type('罗嘉瑞')
         print(test.json)
     elif test_target == 8:
-        test = get_activity_record()
+        test = Get_activity_record()
         print(test.json)
     elif test_target == 9:
-        test = get_activity_btn_name(2327102,954931,"5pdib4r6")
+        test = Get_activity_btn_name(2327102,954931,"5pdib4r6")
         print(test.json)
         print(test.btn_name)
         print(test.get_info())

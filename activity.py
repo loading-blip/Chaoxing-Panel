@@ -98,7 +98,7 @@ class HTMLTextExtractor(HTMLParser):
     def get_text(self):
         return ''.join(self.result)
 
-class Activity_information_constructer:
+class Activity:
     """
     第二课堂活动列表，将json数据处理，提供当前课程报名状态
     """
@@ -122,9 +122,9 @@ class Activity_information_constructer:
             raw_json(Dict[str,Any], optional): 爬取到的单个课程json
             second_raw_json(Dict[str,Any], optional): 爬取到的此课程描述
         """
-        self.sub_domain = get_302_Location(raw_json["id"]).domain
+        self.sub_domain = Get_activity_sub_domain(raw_json["id"]).domain
         if not second_raw_json:
-            self.activity_detial = get_activity_detial(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
+            self.activity_detial = Get_activity_detial(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
             second_raw_json = self.activity_detial.json["data"]["results"]
         else:
             second_raw_json = second_raw_json["data"]["results"]
@@ -134,7 +134,6 @@ class Activity_information_constructer:
         self.start_time,self.end_time = self.format_date(self.get_time_in_json(second_raw_json))
         self.class_start_time = raw_json["startTime"] / 1000
         self.class_end_time = raw_json["endTime"] / 1000
-        self.name = raw_json["name"]
         self.id = raw_json["id"]
         self.is_registered = False
         self.is_register_link = ""
@@ -145,9 +144,9 @@ class Activity_information_constructer:
         self.belong_group = ["信息工程学院","8号楼","线上"]
         self.organisers = raw_json["organisers"]
 
-        # self.wfwfid = get_activity_HTML(self.sub_domain,raw_json["pageId"])
-        self.activity_describe = get_activity_describe(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
-        self.activity_btn_name = get_activity_btn_name(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
+        # self.wfwfid = Get_activity_HTML(self.sub_domain,raw_json["pageId"])
+        self.activity_describe = Get_activity_describe(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
+        self.activity_btn_name = Get_activity_btn_name(raw_json["pageId"],raw_json["websiteId"],self.sub_domain)
     
         self.describe = self.activity_describe.describe
         self.btn_name = self.activity_btn_name.btn_name
@@ -316,13 +315,13 @@ class Chaoxing_activity:
         self.shared_data.set_data_json(self.data)
 
     # requests动态获取第二课堂JSON
-    def _get_activity_list_json(self)-> dict: 
-        activity_raw = get_activity().get_activity_json()
+    def _Get_activity_list_json(self)-> dict: 
+        activity_raw = Get_activity().Get_activity_json()
         return json.loads(activity_raw)
     # return json.load(open("dier.json",'r',encoding='utf8'))
     def get_data(self):
         self.shared_data.set_current_work("正在获取第二课堂列表中...")
-        activity_json = self._get_activity_list_json()
+        activity_json = self._Get_activity_list_json()
         if activity_json['code']!= 1 : 
             logging.error("返回结果有误")
             sys.exit(1)
@@ -331,17 +330,17 @@ class Chaoxing_activity:
             os.mkdir("tmp")
 
         process_bar = tqdm(total=len(activity_json['data']['records']))
-        activity_list:List[Activity_information_constructer] = []
+        activity_list:List[Activity] = []
 
         for activity in activity_json['data']['records']:
             self.shared_data.set_current_work(f'正在获取"{activity["name"]}"的详细信息...')
             self.shared_data.acc_current_quantity()
-            activity_list.append(Activity_information_constructer(activity,config=self._config))
+            activity_list.append(Activity(activity,config=self._config))
             process_bar.update(1)
             # time.sleep(1)
         process_bar.close()
         return activity_list
-    def format_data(self,raw_data:List[Activity_information_constructer]) -> List[Dict[str,str]]:
+    def format_data(self,raw_data:List[Activity]) -> List[Dict[str,str]]:
         activities = []
         # HACK: 代码重复，下次重构解决
         for activity in raw_data:
@@ -440,8 +439,8 @@ class Chaoxing_transcript:
         self.act_record = []
         self.shared_data = shared_data
 
-        self._act_type:get_activity_type
-        self._act_record:get_activity_record
+        self._act_type:Get_activity_type
+        self._act_record:Get_activity_record
 
     def run_request(self):
         self.shared_data.set_current_work("正在获取参与过的项目....")
@@ -455,14 +454,14 @@ class Chaoxing_transcript:
         self.shared_data.set_data_json(self.get_pack())
 
     def get_record(self):
-        self._act_record = get_activity_record()
+        self._act_record = Get_activity_record()
         self.real_name = self._act_record.json[0]['userName']
         return self._act_record.json
     
     def get_type(self):
         if not self.real_name:
             self.act_record = self.get_record()
-        self._act_type = get_activity_type(self.real_name)
+        self._act_type = Get_activity_type(self.real_name)
         for type in self._act_type.json:
             self.max_score += type['minScore'] if type['minScore'] else 0.0
         return self._act_type.json
@@ -477,6 +476,6 @@ class Chaoxing_transcript:
 
 if __name__ == "__main__":
     # test = Chaoxing_transcript(SharedData())
-    test = Activity_information_constructer(json.load(open('test_resources/dier-1.json','r',encoding='utf8')),config=Config())
+    test = Activity(json.load(open('test_resources/dier-1.json','r',encoding='utf8')),config=Config())
     print(test.get_status())
     print(test.btn_name)
